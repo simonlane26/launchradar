@@ -1,0 +1,100 @@
+// LaunchRadar — Prisma schema
+// Multi-tenant: every row scoped by organisationId (Clerk org id), matching
+// the row-level isolation pattern used across Simon's other projects.
+//
+// Phase 1 (MVP) models only: Organisation, Project, Analysis.
+// Later-phase models (Competitor, Opportunity, Experiment, Channel, Task, ...)
+// are sketched in CLAUDE.md and will be added when those phases start.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Mirrors a Clerk organisation (or a personal/"default" org for solo users).
+/// Nothing auth-related is duplicated here beyond the Clerk id — Clerk stays
+/// the source of truth for membership, roles, and billing.
+model Organisation {
+  id          String   @id @default(cuid())
+  clerkOrgId  String   @unique
+  name        String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  projects Project[]
+
+  @@map("organisations")
+}
+
+enum ProjectStage {
+  IDEA
+  NEW_LAUNCH
+  EARLY_TRACTION
+  GROWING
+  ESTABLISHED
+}
+
+/// One vibe-coded app/website being tracked for growth. A founder can add
+/// multiple projects (e.g. an agency, or someone running several apps).
+model Project {
+  id             String       @id @default(cuid())
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+
+  url      String
+  name     String?
+  category String? // e.g. "B2B SaaS", "Consumer app"
+  icp      String? // free-text ICP summary, extracted by Claude
+  pricing  String? // free-text pricing summary, e.g. "£12/month"
+  stage    ProjectStage @default(NEW_LAUNCH)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  analyses Analysis[]
+
+  @@index([organisationId])
+  @@map("projects")
+}
+
+enum AnalysisStatus {
+  PENDING
+  RUNNING
+  COMPLETE
+  FAILED
+}
+
+/// One run of the Understand/Analyze pipeline for a Project. Versioned per
+/// run (not upserted) so score history/trend can be shown over time.
+model Analysis {
+  id             String       @id @default(cuid())
+  organisationId String
+  projectId      String
+  project        Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  status AnalysisStatus @default(PENDING)
+
+  growthScore Int? // 0-100
+
+  // Structured findings — see CLAUDE.md "Analysis JSON shapes" for the
+  // documented shape of each field. Kept as JSON in Phase 1 rather than
+  // fully normalised tables, since the schema is still evolving fast.
+  issues             Json? // [{ severity: "red"|"amber"|"green", area, summary }]
+  readinessChecklist Json? // [{ key, label, status: "pass"|"fail"|"unknown", detail }]
+  actionPlan         Json? // [{ day, title, detail }] — "This Week" plan
+  rawExtraction      Json? // Claude's raw structured extraction (ICP, competitors, positioning, etc.)
+
+  errorMessage String?
+
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  @@index([organisationId])
+  @@index([projectId])
+  @@map("analyses")
+}
