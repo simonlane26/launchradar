@@ -260,9 +260,9 @@ export function PricingPlans({
       </p>
 
       <section className="mt-16">
-        <h3 className="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500">
+        <h2 className="mb-4 text-sm font-semibold uppercase tracking-wide text-zinc-500">
           Everything in each plan
-        </h3>
+        </h2>
         <div className="overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
           <table className="w-full min-w-[560px] border-collapse text-sm">
             <thead>
