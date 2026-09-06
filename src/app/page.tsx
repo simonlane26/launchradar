@@ -65,7 +65,9 @@ export default function Home() {
               </Link>
             </div>
 
-            <div className="mt-1 flex flex-wrap items-center justify-center gap-3">
+            <PlaybookSignup />
+
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
               <a
                 href="https://www.producthunt.com/products/coded-apps/reviews/new?utm_source=badge-product_review&utm_medium=badge&utm_source=badge-coded-apps"
                 target="_blank"
@@ -95,8 +97,6 @@ export default function Home() {
                 />
               </a>
             </div>
-
-            <PlaybookSignup />
           </div>
         </section>
 
