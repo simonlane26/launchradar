@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { IconTarget, IconCheck, IconExternalLink } from "@tabler/icons-react";
 import { completeAction, generateActionGuide } from "./action-actions";
 import {
@@ -44,17 +44,23 @@ export function NextBestActionCard({
 
   const locked = aiActionsAtLimit && !guide;
   const external = action.externalUrl;
+  const cardRef = useRef<HTMLElement>(null);
 
-  const { completing, collapsed, trigger } = useCompleteAnimation(() =>
-    startComplete(() => completeAction(action.id)),
+  const { completing, collapsed, height, trigger } = useCompleteAnimation(
+    () => startComplete(() => completeAction(action.id)),
+    cardRef,
   );
 
   return (
     <section
+      ref={cardRef}
       className="rounded-2xl border border-zinc-900 bg-white dark:border-zinc-100 dark:bg-zinc-950"
       style={{
         padding: collapsed ? "0 1.5rem" : "1.5rem",
-        maxHeight: collapsed ? 0 : 900,
+        // Unbounded normally (a long drafted asset scrolls inside its <pre>);
+        // only clamp to the card's current height once "mark done" starts, so
+        // it can transition down to 0.
+        maxHeight: collapsed ? 0 : completing ? (height ?? 900) : "none",
         opacity: collapsed ? 0 : 1,
         overflow: "hidden",
         transition: "max-height 400ms ease, opacity 400ms ease, padding 400ms ease",
@@ -100,7 +106,7 @@ export function NextBestActionCard({
       </p>
 
       {!external && guide && (
-        <pre className="mt-4 whitespace-pre-wrap rounded-xl border border-zinc-200 bg-zinc-50 p-4 font-sans text-sm text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300">
+        <pre className="mt-4 max-h-96 overflow-y-auto whitespace-pre-wrap rounded-xl border border-zinc-200 bg-zinc-50 p-4 font-sans text-sm text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300">
           {guide}
         </pre>
       )}

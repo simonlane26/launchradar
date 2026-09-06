@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import {
   IconCheck,
   IconCircleCheck,
@@ -42,9 +42,11 @@ function BacklogCard({
 
   const locked = aiActionsAtLimit && !guide;
   const external = action.externalUrl;
+  const cardRef = useRef<HTMLLIElement>(null);
 
-  const { completing, collapsed, trigger } = useCompleteAnimation(() =>
-    startMut(() => completeAction(action.id)),
+  const { completing, collapsed, height, trigger } = useCompleteAnimation(
+    () => startMut(() => completeAction(action.id)),
+    cardRef,
   );
 
   const primaryLabel = guidePending
@@ -61,10 +63,14 @@ function BacklogCard({
 
   return (
     <li
+      ref={cardRef}
       className="rounded-xl border border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950"
       style={{
         padding: collapsed ? "0 1rem" : "1rem",
-        maxHeight: collapsed ? 0 : 700,
+        // Unbounded normally (long "Create with AI" drafts scroll inside the
+        // <pre> below); only clamp to the card's current height once the
+        // "mark done" animation starts, so it can transition down to 0.
+        maxHeight: collapsed ? 0 : completing ? (height ?? 800) : "none",
         opacity: collapsed ? 0 : 1,
         overflow: "hidden",
         transition: "max-height 400ms ease, opacity 400ms ease, padding 400ms ease",
@@ -172,7 +178,7 @@ function BacklogCard({
         : guide &&
           open && (
             <>
-              <pre className="mt-3 whitespace-pre-wrap rounded-lg border border-zinc-200 bg-zinc-50 p-3 font-sans text-sm text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300">
+              <pre className="mt-3 max-h-96 overflow-y-auto whitespace-pre-wrap rounded-lg border border-zinc-200 bg-zinc-50 p-3 font-sans text-sm text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300">
                 {guide}
               </pre>
               {steps && steps.length > 0 && <StepChecklist steps={steps} />}
