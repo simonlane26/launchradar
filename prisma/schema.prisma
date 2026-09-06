@@ -41,6 +41,17 @@ model Organisation {
   /// canceled | …) and the current period end, for "renews / ends on X" UI.
   subscriptionStatus   String?
   currentPeriodEnd     DateTime?
+
+  /// Contact + transactional-email state. `email`/`firstName` are synced
+  /// from Clerk on the user's first authenticated request (see
+  /// `requireOrganisation`). `welcomeSentAt` gates the one-time welcome;
+  /// `emailOptOut` (set via /api/unsubscribe) suppresses the non-welcome
+  /// emails (analysis complete, Radar alert).
+  email          String?
+  firstName      String?
+  welcomeSentAt  DateTime?
+  emailOptOut    Boolean   @default(false)
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -450,6 +461,10 @@ model Opportunity {
   opportunityScore Int // 0-100, computed in code — see CLAUDE.md scoring formula
   status           OpportunityStatus @default(NEW)
   reply            String? // cached "Draft reply" output, generated on demand
+
+  /// Set once a high-intent email alert has gone out for this opportunity —
+  /// stops re-alerting across scans.
+  alertedAt DateTime?
 
   createdAt DateTime @default(now())
 

@@ -10,6 +10,8 @@ import { computeScoreBreakdown, overallFromBreakdown } from "@/lib/score";
 import { similarTitle } from "@/lib/action-dedup";
 import { PLAN_LIMITS } from "@/lib/plan";
 import { toUserMessage } from "@/lib/errors";
+import { SITE_URL } from "@/lib/seo";
+import { sendAnalysisCompleteEmail } from "@/lib/email";
 
 const ISSUE_AREAS = [
   "positioning",
@@ -448,6 +450,17 @@ export async function runAnalysis(
       console.error("Failed to seed security action:", secError);
     }
 
+    try {
+      await maybeSendAnalysisEmail(projectId, organisationId, {
+        projectName: extraction.name,
+        growthScore,
+        issues,
+        topAction: extraction.nextActions[0],
+      });
+    } catch (mailError) {
+      console.error("Failed to send analysis email:", mailError);
+    }
+
     return analysis.id;
   } catch (error) {
     await prisma.analysis.update({
@@ -578,5 +591,67 @@ async function maybeSeedSecurityAction(
         "Add a short line or badge to your site linking to the result, e.g. \"Independently security-checked\".",
       ] as unknown as Prisma.InputJsonValue,
     },
+  });
+}
+
+const ISSUE_AREA_LABEL: Record<IssueArea, string> = {
+  positioning: "Positioning isn't landing",
+  comparison_pages: "No comparison pages",
+  demo_video: "No demo of the product",
+  seo_coverage: "Thin search coverage",
+  directory_presence: "Missing from the directories buyers check",
+  social_proof: "Not enough proof",
+  signup_flow: "Friction in the signup flow",
+};
+
+function formatEffort(minutes: number): string {
+  if (minutes < 60) return `${minutes} min`;
+  const hrs = minutes / 60;
+  return `${Number.isInteger(hrs) ? hrs : hrs.toFixed(1)} hr`;
+}
+
+/**
+ * Emails the founder their first Growth Score once — only when this is the
+ * org's first COMPLETE analysis, they have an email, and haven't opted out.
+ * Non-fatal: the analysis is already saved.
+ */
+async function maybeSendAnalysisEmail(
+  projectId: string,
+  organisationId: string,
+  data: {
+    projectName: string;
+    growthScore: number;
+    issues: NormalizedIssue[];
+    topAction: Extraction["nextActions"][number] | undefined;
+  },
+) {
+  const completeCount = await prisma.analysis.count({
+    where: { organisationId, status: "COMPLETE" },
+  });
+  if (completeCount !== 1) return; // not their first
+
+  const org = await prisma.organisation.findUnique({
+    where: { id: organisationId },
+    select: { email: true, firstName: true, emailOptOut: true },
+  });
+  if (!org?.email || org.emailOptOut) return;
+
+  const topIssue =
+    data.issues.find((i) => i.severity === "red") ??
+    data.issues.find((i) => i.severity === "amber");
+  const action = data.topAction;
+
+  await sendAnalysisCompleteEmail({
+    to: org.email,
+    orgId: organisationId,
+    firstName: org.firstName ?? undefined,
+    projectName: data.projectName,
+    growthScore: data.growthScore,
+    topIssueTitle: topIssue ? ISSUE_AREA_LABEL[topIssue.area] : undefined,
+    topIssueReason: topIssue?.summary,
+    nextAction: action?.title ?? "Open your Growth Backlog and start with the top item.",
+    estimatedEffort: action ? formatEffort(action.effortMinutes) : "varies",
+    impact: action?.impact ?? "HIGH",
+    projectUrl: `${SITE_URL}/projects/${projectId}`,
   });
 }

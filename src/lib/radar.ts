@@ -7,6 +7,8 @@ import { domainOf } from "@/lib/url";
 import type { Extraction } from "@/lib/analysis";
 import { PLAN_LIMITS, getUsage, recordUsage, type PlanLimits } from "@/lib/plan";
 import { toUserMessage } from "@/lib/errors";
+import { SITE_URL } from "@/lib/seo";
+import { sendRadarAlertEmail } from "@/lib/email";
 
 /**
  * Phase 3 — Opportunity Radar. Finds people already showing buying intent
@@ -638,6 +640,12 @@ export async function runRadarScan(
       },
     });
 
+    try {
+      await maybeSendRadarAlert(project, organisationId, scan.id);
+    } catch (mailError) {
+      console.error("Failed to send radar alert:", mailError);
+    }
+
     return scan.id;
   } catch (error) {
     await prisma.radarScan.update({
@@ -716,4 +724,73 @@ export async function recordOpportunityFeedback(
     const next = Math.min(2, Math.max(0.1, query.weight + delta));
     await prisma.radarQuery.update({ where: { id: query.id }, data: { weight: next } });
   }
+}
+
+// --- high-intent email alert ---------------------------------------------------
+
+/** Below this an opportunity isn't worth an immediate email. */
+const RADAR_ALERT_MIN_SCORE = 85;
+
+const INTENT_LABEL: Record<string, string> = {
+  RECOMMENDATION_REQUEST: "Looking for a recommendation",
+  PROBLEM_FRUSTRATION: "Frustrated with the problem",
+  COMPETITOR_DISSATISFACTION: "Unhappy with a competitor",
+  PURCHASE_RESEARCH: "Researching a purchase",
+  OTHER: "Buying signal",
+};
+
+function timeAgo(date: Date | null): string {
+  if (!date) return "recently";
+  const hours = (Date.now() - date.getTime()) / 3_600_000;
+  if (hours < 1) return "just now";
+  if (hours < 24) return `${Math.round(hours)}h ago`;
+  const days = hours / 24;
+  if (days < 30) return `${Math.round(days)}d ago`;
+  return `${Math.round(days / 30)}mo ago`;
+}
+
+/**
+ * After a scan, email the founder about the single strongest new opportunity
+ * if it scored ≥ RADAR_ALERT_MIN_SCORE. Marks every qualifying row from this
+ * scan `alertedAt` so it never re-alerts, even if the email itself is
+ * skipped (no address / opted out). One email per scan, non-fatal.
+ */
+async function maybeSendRadarAlert(
+  project: { id: string; name: string | null; url: string },
+  organisationId: string,
+  scanId: string,
+) {
+  const top = await prisma.opportunity.findFirst({
+    where: { scanId, opportunityScore: { gte: RADAR_ALERT_MIN_SCORE }, alertedAt: null },
+    orderBy: { opportunityScore: "desc" },
+  });
+  if (!top) return;
+
+  await prisma.opportunity.updateMany({
+    where: { scanId, opportunityScore: { gte: RADAR_ALERT_MIN_SCORE }, alertedAt: null },
+    data: { alertedAt: new Date() },
+  });
+
+  const org = await prisma.organisation.findUnique({
+    where: { id: organisationId },
+    select: { email: true, emailOptOut: true },
+  });
+  if (!org?.email || org.emailOptOut) return;
+
+  await sendRadarAlertEmail({
+    to: org.email,
+    orgId: organisationId,
+    projectName: project.name ?? project.url,
+    opportunityScore: top.opportunityScore,
+    intentLabel: INTENT_LABEL[top.intent] ?? "Buying signal",
+    sourceName: top.source.charAt(0).toUpperCase() + top.source.slice(1),
+    timeAgo: timeAgo(top.publishedAt),
+    excerpt: top.excerpt.length > 280 ? `${top.excerpt.slice(0, 277)}…` : top.excerpt,
+    aiReason: top.aiReason,
+    productFit: top.productFit,
+    purchaseIntent: top.purchaseIntent,
+    audienceMatch: top.audienceMatch,
+    suggestedAction: top.suggestedAction,
+    radarUrl: `${SITE_URL}/projects/${project.id}/radar`,
+  });
 }

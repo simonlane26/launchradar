@@ -1,5 +1,8 @@
-import { auth } from "@clerk/nextjs/server";
+import { after } from "next/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
+import { sendWelcomeEmail } from "@/lib/email";
+import { logError } from "@/lib/errors";
 
 /** Clerk user ids with an unlimited-access admin bypass on every plan gate.
  *  Comma/space/newline separated in `ADMIN_CLERK_USER_IDS`. This — not the
@@ -12,6 +15,45 @@ function adminUserIds(): Set<string> {
       .map((s) => s.trim())
       .filter(Boolean),
   );
+}
+
+/**
+ * Backfill `Organisation.email` / `.firstName` from Clerk and fire the
+ * one-time welcome email. Runs after the response (`after()`), only when
+ * something is actually missing, so the common request pays nothing.
+ */
+async function syncOrgContact(orgId: string): Promise<void> {
+  try {
+    const org = await prisma.organisation.findUnique({
+      where: { id: orgId },
+      select: { email: true, firstName: true, welcomeSentAt: true },
+    });
+    if (!org) return;
+
+    const user = await currentUser();
+    const email = user?.primaryEmailAddress?.emailAddress ?? null;
+    const firstName = user?.firstName ?? null;
+    if (!email) return;
+
+    const data: { email?: string; firstName?: string } = {};
+    if (org.email !== email) data.email = email;
+    if (firstName && !org.firstName) data.firstName = firstName;
+    if (Object.keys(data).length) {
+      await prisma.organisation.update({ where: { id: orgId }, data });
+    }
+
+    if (!org.welcomeSentAt) {
+      const sent = await sendWelcomeEmail({ to: email, firstName: firstName ?? undefined });
+      if (sent) {
+        await prisma.organisation.update({
+          where: { id: orgId },
+          data: { welcomeSentAt: new Date() },
+        });
+      }
+    }
+  } catch (err) {
+    logError("syncOrgContact", err);
+  }
 }
 
 /**
@@ -37,6 +79,14 @@ export async function requireOrganisation() {
     update: {},
     create: { clerkOrgId, name: orgId ? "Organisation" : "My workspace" },
   });
+
+  if (!organisation.email || !organisation.welcomeSentAt) {
+    try {
+      after(() => syncOrgContact(organisation.id));
+    } catch {
+      // `after` is unavailable outside a request scope — skip silently.
+    }
+  }
 
   return Object.assign(organisation, { isAdmin: adminUserIds().has(userId) });
 }

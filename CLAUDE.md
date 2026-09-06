@@ -75,7 +75,8 @@ different channels. LaunchRadar's differentiation, in priority order:
 ## Project structure
 
 ```
-prisma/schema.prisma        Organisation (+ tier + stripe fields), Project, Analysis, LaunchPlan,
+prisma/schema.prisma        Organisation (+ tier + stripe fields + email/firstName/welcomeSentAt/
+                              emailOptOut), Project, Analysis, LaunchPlan,
                               Action, VisibilityReport, ProductProfile, RadarQuery, RadarScan,
                               Opportunity, OpportunityFeedback, Usage, Subscriber
 src/lib/prisma.ts           Prisma client singleton
@@ -83,7 +84,10 @@ src/lib/plan.ts             Pricing-tier limits (PLAN_LIMITS) + monthly usage me
                               the single source of truth behind the /pricing table
 src/lib/anthropic.ts        Anthropic client + model constant
 src/lib/org.ts              requireOrganisation() — resolves/creates tenant row; adds `isAdmin`
-                              from the ADMIN_CLERK_USER_IDS allowlist
+                              from the ADMIN_CLERK_USER_IDS allowlist. Also fires the one-time
+                              welcome email via `after()` → `syncOrgContact` (backfills
+                              Organisation.email/firstName from Clerk, stamps welcomeSentAt) —
+                              only runs when email or welcomeSentAt is missing
 src/lib/website.ts          Deterministic technical + discovery (AEO/GEO) checks, no LLM
 src/lib/url.ts              URL normalisation + SSRF guard for founder-supplied URLs; domainOf()
 src/lib/analysis.ts         Orchestrates website.ts + Claude → Analysis row + seeds Actions
@@ -126,8 +130,19 @@ src/app/billing/actions.ts   startCheckout(tier, cadence) → hosted Checkout re
                               openBillingPortal() → hosted Customer Portal redirect
 src/app/api/webhooks/stripe/route.ts   Verifies signature, syncs subscription → Organisation.tier
                               (the real writer once billing is live)
-src/lib/email.ts           Resend client (optional — null when RESEND_API_KEY unset) +
-                              sendPlaybookEmail() — the landing "first-users playbook" autoresponder
+src/lib/email.ts           Resend client (optional — null when RESEND_API_KEY unset; every send
+                              is a logged no-op until the key + a verified domain are set). Four
+                              emails, one shared `shell()`/`btn()`/`esc()`/`send()` core:
+                              `sendPlaybookEmail` (landing autoresponder) and `sendWelcomeEmail`
+                              (first sign-in) are pure transactional — no unsub footer;
+                              `sendAnalysisCompleteEmail` (first Growth Score) and
+                              `sendRadarAlertEmail` (Radar opportunity ≥ 85) carry an unsubscribe
+                              link and are suppressed by `Organisation.emailOptOut`. HMAC unsub
+                              token: `unsubToken`/`verifyUnsubToken` (sha256 over orgId, keyed by
+                              CLERK_SECRET_KEY, base64url, 24 chars).
+src/app/api/unsubscribe/route.ts   GET `?o=<orgId>&t=<token>` — verifies the HMAC token, sets
+                              Organisation.emailOptOut, returns a minimal HTML confirmation page.
+                              Public route (listed in proxy.ts isPublicRoute).
 src/app/playbook-actions.ts   subscribePlaybook(email) — 1-field landing signup: upsert Subscriber,
                               send the playbook once (playbookSentAt gate), IP rate-limited
 src/components/playbook-signup.tsx   The subtle landing email form + a no-op analytics event
@@ -552,6 +567,36 @@ by AI assistants when someone asks "how do I market my vibe-coded app" or
 - Not done yet: real OG images (`opengraph-image`), a shared marketing
   footer, per-`[slug]` `Article`/`datePublished` metadata, `HowTo` schema
   on walkthrough content.
+
+## Transactional email (Resend)
+
+All email goes through `src/lib/email.ts` → Resend. **Optional and
+fail-open**: with `RESEND_API_KEY` unset every `send()` logs and returns
+`false`, and every caller treats a non-send as a no-op — the app never
+blocks on email. Turn it on by setting `RESEND_API_KEY` + `RESEND_FROM`
+(a verified sending domain).
+
+Four emails, each fired from the flow it belongs to (no cron, no webhook):
+
+| Email | Trigger | Fired from | Unsub? |
+|---|---|---|---|
+| Playbook | Landing "first-users playbook" form submit | `subscribePlaybook` (`playbook-actions.ts`), `Subscriber.playbookSentAt` gate | no (opt-in) |
+| Welcome | First authenticated request for a new org | `requireOrganisation` → `after()` → `syncOrgContact` (`org.ts`), `Organisation.welcomeSentAt` gate | no |
+| Analysis complete | The org's **first** COMPLETE Analysis | `runAnalysis` → `maybeSendAnalysisEmail` (`analysis.ts`), guarded on `count(Analysis COMPLETE) === 1` | yes |
+| Radar alert | Scan produces an Opportunity scoring **≥ 85** not yet alerted | `runRadarScan` → `maybeSendRadarAlert` (`radar.ts`), `RADAR_ALERT_MIN_SCORE`, `Opportunity.alertedAt` dedupe (set on every ≥85 row in the scan, so one email per scan and never re-alerted) | yes |
+
+- The two unsub-carrying emails also check `Organisation.emailOptOut` before
+  sending. Opt-out is set by `GET /api/unsubscribe?o=<orgId>&t=<hmac>` — the
+  footer link — which verifies an HMAC-over-orgId token
+  (`verifyUnsubToken`, keyed by `CLERK_SECRET_KEY`) so no login is needed.
+- Send failures are swallowed and logged (`logError`) — a Radar scan or
+  analysis run never fails because an email didn't go out.
+- `welcomeSentAt` and `playbookSentAt` are written only after a *successful*
+  send, so a transient failure retries on the next request. `alertedAt` is
+  the opposite: `maybeSendRadarAlert` stamps every ≥85 row in the scan
+  *before* sending (and regardless of whether the org has an address or has
+  opted out), because its job is "alert once, ever" — a missed send is not
+  worth resurfacing the same opportunity on the next scan.
 
 ## Security posture
 
