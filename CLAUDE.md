@@ -569,9 +569,11 @@ by AI assistants when someone asks "how do I market my vibe-coded app" or
   defence-in-depth upgrade if this ever handles regulated data.
 - **No API route handlers.** All mutations are Server Actions, each starting
   with `requireOrganisation()` then an org-scoped row lookup (IDOR-safe).
-- **Security headers**: `next.config.ts` `headers()` sets CSP (self + Clerk +
-  Turnstile only; `script-src` still has `'unsafe-inline'` — see the file's
-  note on the nonce upgrade), HSTS (2y, preload), `X-Frame-Options: DENY`,
+- **Security headers**: `next.config.ts` `headers()` sets CSP (self + Clerk
+  (host derived from the publishable key) + Turnstile for scripts/frames;
+  `img-src` also allows `api.producthunt.com` for the landing review badge;
+  `script-src` still has `'unsafe-inline'` — see the file's note on the
+  nonce upgrade), HSTS (2y, preload), `X-Frame-Options: DENY`,
   `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy`,
   COOP. `poweredByHeader: false`.
 - **Error hygiene** (`src/lib/errors.ts`): `toUserMessage(context, error,

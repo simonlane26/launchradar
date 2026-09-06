@@ -65,6 +65,22 @@ export default function Home() {
               </Link>
             </div>
 
+            <a
+              href="https://www.producthunt.com/products/coded-apps/reviews/new?utm_source=badge-product_review&utm_medium=badge&utm_source=badge-coded-apps"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-1"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="https://api.producthunt.com/widgets/embed-image/v1/product_review.svg?product_id=1268546&theme=dark"
+                alt="coded apps - Launchradar - Turn your vibe-coded app into a growth machine | Product Hunt"
+                width={250}
+                height={54}
+                loading="lazy"
+              />
+            </a>
+
             <PlaybookSignup />
           </div>
         </section>

@@ -54,7 +54,7 @@ const csp = [
   `form-action 'self' ${clerkScript}`,
   `script-src 'self' 'unsafe-inline' ${isDev ? "'unsafe-eval'" : ""} ${clerkScript} https://challenges.cloudflare.com`,
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https://img.clerk.com",
+  "img-src 'self' data: blob: https://img.clerk.com https://api.producthunt.com",
   "font-src 'self' data:",
   "worker-src 'self' blob:",
   `frame-src 'self' https://challenges.cloudflare.com ${clerkScript}`,
