@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { Prisma } from "@/generated/prisma/client";
-import { anthropic, ANALYSIS_MODEL } from "@/lib/anthropic";
+import { anthropic, MODEL_FAST, MODEL_WRITE } from "@/lib/anthropic";
 import { prisma } from "@/lib/prisma";
 import { analyzeWebsite } from "@/lib/website";
 import type { ReadinessCheck, DiscoverySignals } from "@/lib/website";
@@ -221,7 +221,7 @@ type Competitor = { name: string; url: string; note: string };
 
 async function webSearchAnswer(query: string): Promise<{ answer: string; sourceDomains: string[] }> {
   const stream = anthropic.messages.stream({
-    model: ANALYSIS_MODEL,
+    model: MODEL_WRITE,
     max_tokens: 1500,
     tools: [{ type: "web_search_20260209", name: "web_search", max_uses: 2 }],
     messages: [
@@ -424,7 +424,7 @@ export async function generateActionsForDimension(
   dimension: VisibilityDimension,
 ): Promise<DimensionAction[]> {
   const response = await anthropic.messages.parse({
-    model: ANALYSIS_MODEL,
+    model: MODEL_WRITE,
     max_tokens: 1500,
     output_config: { format: zodOutputFormat(DimensionActionsSchema) },
     messages: [
@@ -474,7 +474,7 @@ export async function runVisibilityReport(
     const ctx = contextBlock(project, competitors);
 
     const dimResponse = await anthropic.messages.parse({
-      model: ANALYSIS_MODEL,
+      model: MODEL_WRITE,
       max_tokens: 4000,
       output_config: { format: zodOutputFormat(DimensionsSchema) },
       messages: [{ role: "user", content: dimensionsPrompt(ctx, onSiteChecks) }],
@@ -501,7 +501,7 @@ export async function runVisibilityReport(
     if (limits.visibilityAiTest && competitors.length > 0 && project.name) {
       try {
         const qsetResponse = await anthropic.messages.parse({
-          model: ANALYSIS_MODEL,
+          model: MODEL_FAST,
           max_tokens: 1500,
           output_config: { format: zodOutputFormat(QuerySetSchema) },
           messages: [{ role: "user", content: queriesPrompt(ctx) }],
@@ -521,7 +521,7 @@ export async function runVisibilityReport(
         const summary = aggregate(queries, project.name, competitors);
 
         const gapsResponse = await anthropic.messages.parse({
-          model: ANALYSIS_MODEL,
+          model: MODEL_WRITE,
           max_tokens: 4000,
           output_config: { format: zodOutputFormat(GapsSchema) },
           messages: [{ role: "user", content: gapsPrompt(ctx, onSiteChecks, summary) }],

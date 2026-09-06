@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import type { Prisma } from "@/generated/prisma/client";
-import { anthropic, ANALYSIS_MODEL } from "@/lib/anthropic";
+import { anthropic, MODEL_FAST, MODEL_WRITE } from "@/lib/anthropic";
 import { prisma } from "@/lib/prisma";
 import { domainOf } from "@/lib/url";
 import type { Extraction } from "@/lib/analysis";
@@ -124,7 +124,7 @@ export async function ensureProductProfile(projectId: string, organisationId: st
   ).map((c) => c.name);
 
   const response = await anthropic.messages.parse({
-    model: ANALYSIS_MODEL,
+    model: MODEL_WRITE,
     max_tokens: 2000,
     output_config: { format: zodOutputFormat(ProfileSchema) },
     messages: [{ role: "user", content: profilePrompt(project, competitorNames) }],
@@ -237,7 +237,7 @@ export async function ensureRadarQueries(
   if (existing.length > 0) return existing;
 
   const response = await anthropic.messages.parse({
-    model: ANALYSIS_MODEL,
+    model: MODEL_FAST,
     max_tokens: 3000,
     output_config: { format: zodOutputFormat(QuerySetSchema) },
     messages: [{ role: "user", content: queryGenPrompt(project, profile) }],
@@ -321,7 +321,7 @@ function coerceRawResults(items: unknown[], query: string): RawResult[] {
 
 async function webSearchOnce(query: string, projectDomain: string): Promise<string> {
   const stream = anthropic.messages.stream({
-    model: ANALYSIS_MODEL,
+    model: MODEL_WRITE,
     max_tokens: 2000,
     tools: [{ type: "web_search_20260209", name: "web_search", max_uses: 3 }],
     messages: [{ role: "user", content: searchPrompt(query, projectDomain) }],
@@ -572,7 +572,7 @@ export async function runRadarScan(
     let saved = 0;
     if (candidates.length > 0) {
       const response = await anthropic.messages.parse({
-        model: ANALYSIS_MODEL,
+        model: MODEL_FAST,
         max_tokens: 16000,
         output_config: { format: zodOutputFormat(ClassificationSetSchema) },
         messages: [{ role: "user", content: classifyPrompt(project, profile, candidates) }],
@@ -661,7 +661,7 @@ export async function generateOpportunityReply(
   project: { name: string | null; url: string; category: string | null },
 ): Promise<string> {
   const response = await anthropic.messages.create({
-    model: ANALYSIS_MODEL,
+    model: MODEL_WRITE,
     max_tokens: 600,
     messages: [
       {

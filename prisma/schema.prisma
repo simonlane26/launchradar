@@ -138,6 +138,12 @@ model Analysis {
   actionPlan         Json? // [{ day, title, detail }] — "This Week" plan
   rawExtraction      Json? // Claude's raw structured extraction (ICP, competitors, positioning, etc.)
 
+  /// SHA-256 of the fetched page's extracted text + deterministic signals +
+  /// analysis revision. If a re-run produces the same hash as a prior
+  /// COMPLETE analysis, the model calls are skipped and the stored result
+  /// is copied forward (see `runAnalysis`).
+  contentHash String?
+
   errorMessage String?
 
   createdAt   DateTime  @default(now())
@@ -145,6 +151,7 @@ model Analysis {
 
   @@index([organisationId])
   @@index([projectId])
+  @@index([projectId, contentHash])
   @@map("analyses")
 }
 

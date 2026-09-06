@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
-import { anthropic, ANALYSIS_MODEL } from "@/lib/anthropic";
+import { anthropic, MODEL_WRITE } from "@/lib/anthropic";
 import type { Action, Project } from "@/generated/prisma/client";
 
 /**
@@ -71,7 +71,7 @@ export type Guide = { text: string; steps: string[] | null };
 export async function generateGuide(project: Project, action: Action): Promise<Guide> {
   if (action.deliverable === "ASSET") {
     const response = await anthropic.messages.create({
-      model: ANALYSIS_MODEL,
+      model: MODEL_WRITE,
       max_tokens: 4000,
       messages: [{ role: "user", content: assetPrompt(project, action) }],
     });
@@ -85,7 +85,7 @@ export async function generateGuide(project: Project, action: Action): Promise<G
   }
 
   const response = await anthropic.messages.parse({
-    model: ANALYSIS_MODEL,
+    model: MODEL_WRITE,
     max_tokens: 1500,
     output_config: { format: zodOutputFormat(WalkthroughSchema) },
     messages: [{ role: "user", content: walkthroughPrompt(project, action) }],

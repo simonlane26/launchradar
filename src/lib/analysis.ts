@@ -1,7 +1,8 @@
+import { createHash } from "node:crypto";
 import { z } from "zod";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
-import type { Prisma } from "@/generated/prisma/client";
-import { anthropic, ANALYSIS_MODEL } from "@/lib/anthropic";
+import { Prisma } from "@/generated/prisma/client";
+import { anthropic, MODEL_WRITE, MODEL_JUDGE } from "@/lib/anthropic";
 import { prisma } from "@/lib/prisma";
 import { analyzeWebsite } from "@/lib/website";
 import type { ReadinessCheck } from "@/lib/website";
@@ -180,6 +181,125 @@ Then produce nextActions: a prioritised growth backlog of 3-7 self-contained ite
 Every item must be something the founder could pick up and finish — not a theme.`;
 }
 
+// Bump to invalidate every cached analysis (e.g. after a prompt change).
+const ANALYSIS_REV = "2026-09-06a";
+
+/** Cache key for skip-if-unchanged: the extracted text + the deterministic
+ *  signals that actually feed the model, not the raw HTML (which carries
+ *  volatile tokens/timestamps that would defeat the cache). */
+function hashSiteContent(site: {
+  bodyText: string;
+  readinessChecks: unknown;
+  qualitativeSignals: unknown;
+  discoverySignals: unknown;
+}): string {
+  const h = createHash("sha256");
+  h.update(ANALYSIS_REV);
+  for (const part of [
+    site.bodyText,
+    JSON.stringify(site.readinessChecks),
+    JSON.stringify(site.qualitativeSignals),
+    JSON.stringify(site.discoverySignals),
+  ]) {
+    h.update(" ");
+    h.update(part);
+  }
+  return h.digest("hex");
+}
+
+const TopActionSchema = z.object({
+  chosenIndex: z
+    .number()
+    .int()
+    .min(0)
+    .describe("0-based index into the candidate list of the single highest-leverage action to do first."),
+  title: z.string().describe("Imperative and specific to THIS product."),
+  rationale: z
+    .string()
+    .describe("Two or three sentences — the specific reason this is the one move that matters most for this product right now."),
+  detail: z.string().describe("2-4 concrete sub-steps."),
+  impact: z.enum(["HIGH", "MEDIUM", "LOW"]),
+});
+
+function topActionPrompt(
+  project: { name: string; url: string; category: string; icp: string; pricing: string; stage: string },
+  issues: NormalizedIssue[],
+  readinessChecks: ReadinessCheck[],
+  candidates: Extraction["nextActions"],
+): string {
+  const problems = issues
+    .filter((i) => i.severity !== "green")
+    .map((i) => `- ${i.area} (${i.severity}): ${i.summary}`)
+    .join("\n");
+  const missing = readinessChecks
+    .filter((c) => c.status === "fail")
+    .map((c) => c.label)
+    .join(", ");
+  const list = candidates
+    .map(
+      (a, i) =>
+        `[${i}] ${a.title} — ${a.category}, ${a.impact} impact, ~${a.effortMinutes}min — ${a.rationale}`,
+    )
+    .join("\n");
+
+  return `You are LaunchRadar's lead growth strategist. Below is a vibe-coded product, the growth problems found on its site, and candidate backlog actions another analyst drafted. Pick the ONE action that will move this product's growth most in the next week — the single highest-leverage thing, weighing impact against effort and what a solo founder can realistically finish — and sharpen it.
+
+PRODUCT
+Name: ${project.name}
+URL: ${project.url}
+Category: ${project.category}
+ICP: ${project.icp}
+Pricing: ${project.pricing}
+Stage: ${project.stage}
+
+GROWTH PROBLEMS
+${problems || "(none flagged)"}
+
+MISSING MARKETING INFRA: ${missing || "none"}
+
+CANDIDATE ACTIONS
+${list}
+
+Return chosenIndex (the best candidate) plus a sharpened title, a rationale that names the concrete reason it matters for THIS product, 2-4 sub-steps, and an impact rating.`;
+}
+
+/** One Opus call: choose and sharpen the single best next action, and move
+ *  it to the front of the backlog. Degrades to the unranked list on failure
+ *  — the analysis still completes. */
+async function refineTopAction(
+  project: { name: string; url: string; category: string; icp: string; pricing: string; stage: string },
+  issues: NormalizedIssue[],
+  readinessChecks: ReadinessCheck[],
+  candidates: Extraction["nextActions"],
+): Promise<Extraction["nextActions"]> {
+  if (candidates.length === 0) return candidates;
+  try {
+    const res = await anthropic.messages.parse({
+      model: MODEL_JUDGE,
+      max_tokens: 1200,
+      output_config: { format: zodOutputFormat(TopActionSchema) },
+      messages: [
+        { role: "user", content: topActionPrompt(project, issues, readinessChecks, candidates) },
+      ],
+    });
+    const pick = res.parsed_output;
+    if (!pick) return candidates;
+    const idx = Math.min(Math.max(0, pick.chosenIndex), candidates.length - 1);
+    const chosen = candidates[idx];
+    const refined: Extraction["nextActions"][number] = {
+      ...chosen,
+      title: pick.title.trim() || chosen.title,
+      rationale: pick.rationale.trim() || chosen.rationale,
+      detail: pick.detail.trim() || chosen.detail,
+      impact: pick.impact,
+    };
+    return [refined, ...candidates.filter((_, i) => i !== idx)];
+  } catch (err) {
+    console.error("refineTopAction failed; using the unranked backlog:", err);
+    return candidates;
+  }
+}
+
 export async function runAnalysis(
   projectId: string,
   organisationId: string,
@@ -192,9 +312,46 @@ export async function runAnalysis(
 
   try {
     const site = await analyzeWebsite(url);
+    const contentHash = hashSiteContent(site);
+
+    // Nothing changed since the last scan → copy that result forward and
+    // spend nothing on the model. Old rows have `contentHash: null` so a
+    // first run after this shipped always does the full analysis; bumping
+    // ANALYSIS_REV in `hashSiteContent` invalidates every cached result.
+    const prior = await prisma.analysis.findFirst({
+      where: { projectId, status: "COMPLETE", contentHash },
+      orderBy: { createdAt: "desc" },
+    });
+    if (prior) {
+      await prisma.analysis.update({
+        where: { id: analysis.id },
+        data: {
+          status: "COMPLETE",
+          contentHash,
+          growthScore: prior.growthScore,
+          // A COMPLETE analysis always has these set (written together below).
+          issues: prior.issues as unknown as Prisma.InputJsonValue,
+          readinessChecklist: prior.readinessChecklist as unknown as Prisma.InputJsonValue,
+          rawExtraction: prior.rawExtraction as unknown as Prisma.InputJsonValue,
+          completedAt: new Date(),
+        },
+      });
+      try {
+        const priorIssues = (prior.issues as unknown as NormalizedIssue[] | null) ?? [];
+        const breakdown = computeScoreBreakdown(priorIssues, site.readinessChecks);
+        const trustScore = breakdown.find((d) => d.dimension === "Trust")?.score ?? 100;
+        await maybeSeedSecurityAction(projectId, organisationId, analysis.id, {
+          trustScore,
+          hasSecuritySignal: site.qualitativeSignals.hasSecuritySignal,
+        });
+      } catch (secError) {
+        console.error("Failed to seed security action:", secError);
+      }
+      return analysis.id;
+    }
 
     const response = await anthropic.messages.parse({
-      model: ANALYSIS_MODEL,
+      model: MODEL_WRITE,
       max_tokens: 16000,
       output_config: { format: zodOutputFormat(ExtractionSchema) },
       messages: [
@@ -225,6 +382,15 @@ export async function runAnalysis(
     const breakdown = computeScoreBreakdown(issues, site.readinessChecks);
     const growthScore = overallFromBreakdown(breakdown);
 
+    // One top-tier judgment call: take Sonnet's candidate backlog and
+    // sharpen the single highest-leverage action to the front.
+    extraction.nextActions = await refineTopAction(
+      { name: extraction.name, url: site.finalUrl, category: extraction.category, icp: extraction.icp, pricing: extraction.pricing, stage: extraction.stage },
+      issues,
+      site.readinessChecks,
+      extraction.nextActions,
+    );
+
     await prisma.$transaction([
       prisma.project.update({
         where: { id: projectId },
@@ -241,6 +407,7 @@ export async function runAnalysis(
         data: {
           status: "COMPLETE",
           growthScore,
+          contentHash,
           issues: issues as unknown as Prisma.InputJsonValue,
           readinessChecklist: site.readinessChecks as unknown as Prisma.InputJsonValue,
           rawExtraction: extraction as unknown as Prisma.InputJsonValue,

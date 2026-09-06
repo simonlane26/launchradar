@@ -59,8 +59,14 @@ different channels. LaunchRadar's differentiation, in priority order:
     `middleware.ts` convention to `proxy.ts`; `clerkMiddleware` still works
     unchanged, just relocate the file).
 - **Claude API** (`@anthropic-ai/sdk`) for the analysis/generation pipeline.
-  Model: `claude-opus-5`. Structured output via `client.messages.parse()` +
-  `zodOutputFormat(schema)` — see `src/lib/analysis.ts`.
+  Structured output via `client.messages.parse()` + `zodOutputFormat(schema)`
+  — see `src/lib/analysis.ts`. **Model tiers** (`src/lib/anthropic.ts`):
+  `MODEL_FAST` = `claude-haiku-4-5` (query generation, opportunity
+  classification), `MODEL_WRITE` = `claude-sonnet-5` (issue summaries,
+  "Why:" rationales, visibility diagnosis, launch copy, how-to guides,
+  web-search retrieval passes), `MODEL_JUDGE` = `claude-opus-5` (one call
+  per analysis — `refineTopAction`, picks + sharpens the single next-best
+  action). Don't reach for `MODEL_JUDGE` elsewhere without a reason.
 - Multi-tenant convention (matches FireXCheck/TwnCryr): every row scoped by
   an `organisationId`. Clerk organisations map 1:1 to `Organisation` rows;
   solo founders without a Clerk org get a synthetic
@@ -156,9 +162,19 @@ docs/CONCEPT.md             Full original feature brainstorm (all phases)
 Organisation (clerkOrgId, name)
   └── Project (url, name, category, icp, pricing, stage)
         └── Analysis (status, growthScore, issues, readinessChecklist,
-                       actionPlan, rawExtraction) — versioned per run,
-                       not upserted, so score history/trend works.
+                       actionPlan, rawExtraction, contentHash) — versioned per
+                       run, not upserted, so score history/trend works.
 ```
+
+**Skip-if-unchanged.** `runAnalysis` fetches the site, then `hashSiteContent`
+= SHA-256 of `bodyText` + the deterministic `website.ts` signals +
+`ANALYSIS_REV`. If a prior COMPLETE `Analysis` for the project has the same
+`contentHash`, the model calls (extraction + `refineTopAction`) are skipped
+entirely — a new versioned row is written that copies the prior result, and
+only `maybeSeedSecurityAction` runs. So mashing "Re-analyze" on an unchanged
+site costs one HTTP fetch and two DB writes, no tokens. Old rows have
+`contentHash: null` and never match; bump `ANALYSIS_REV` to invalidate every
+cache after a prompt change.
 
 ### Analysis JSON shapes (Zod-validated, see `src/lib/analysis.ts`)
 

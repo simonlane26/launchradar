@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import type { Prisma } from "@/generated/prisma/client";
-import { anthropic, ANALYSIS_MODEL } from "@/lib/anthropic";
+import { anthropic, MODEL_WRITE } from "@/lib/anthropic";
 import { prisma } from "@/lib/prisma";
 import type { Extraction } from "@/lib/analysis";
 import type { ReadinessCheck } from "@/lib/website";
@@ -235,7 +235,7 @@ export async function runLaunchPlan(projectId: string, organisationId: string) {
     // directory list) is a large generation, and the SDK rejects a
     // non-streaming request whose worst-case time could exceed 10 minutes.
     const stream = anthropic.messages.stream({
-      model: ANALYSIS_MODEL,
+      model: MODEL_WRITE,
       max_tokens: 32000,
       output_config: { format: zodOutputFormat(LaunchPlanSchema) },
       messages: [
