@@ -2,6 +2,8 @@ import Link from "next/link";
 import { UserButton } from "@clerk/nextjs";
 import { requireOrganisation } from "@/lib/org";
 import { prisma } from "@/lib/prisma";
+import { limitsForOrg, planLabel, formatLimit } from "@/lib/plan";
+import { openBillingPortal } from "@/app/billing/actions";
 import { AnalyzeForm } from "./analyze-form";
 
 const SCORE_COLOR = (score: number | null) => {
@@ -14,6 +16,8 @@ const SCORE_COLOR = (score: number | null) => {
 export default async function DashboardPage() {
   const organisation = await requireOrganisation();
 
+  const projectLimit = limitsForOrg(organisation).projects;
+
   const projects = await prisma.project.findMany({
     where: { organisationId: organisation.id },
     orderBy: { createdAt: "desc" },
@@ -21,6 +25,10 @@ export default async function DashboardPage() {
       analyses: {
         orderBy: { createdAt: "desc" },
         take: 1,
+      },
+      actions: {
+        where: { status: "TODO" },
+        select: { id: true },
       },
     },
   });
@@ -35,13 +43,32 @@ export default async function DashboardPage() {
           <h1 className="text-2xl font-semibold tracking-tight text-black dark:text-zinc-50">
             Dashboard
           </h1>
+          <p className="mt-1 text-sm text-zinc-500">
+            Plan: {planLabel(organisation)} ·{" "}
+            {organisation.stripeCustomerId ? (
+              <form action={openBillingPortal} className="inline">
+                <button type="submit" className="underline hover:text-black dark:hover:text-zinc-100">
+                  Manage billing
+                </button>
+              </form>
+            ) : (
+              <Link href="/pricing" className="underline">
+                See plans
+              </Link>
+            )}
+          </p>
         </div>
         <UserButton />
       </header>
 
       <section className="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950">
-        <h2 className="mb-4 text-lg font-medium">Add a project</h2>
-        <AnalyzeForm />
+        <div className="mb-4 flex items-baseline justify-between">
+          <h2 className="text-lg font-medium">Add a project</h2>
+          <span className="text-sm text-zinc-500">
+            {projects.length} / {formatLimit(projectLimit)} projects
+          </span>
+        </div>
+        <AnalyzeForm atCap={projects.length >= projectLimit} />
       </section>
 
       <section className="flex flex-col gap-3">
@@ -62,7 +89,12 @@ export default async function DashboardPage() {
                 >
                   <div>
                     <p className="font-medium">{project.name ?? project.url}</p>
-                    <p className="text-sm text-zinc-500">{project.url}</p>
+                    <p className="text-sm text-zinc-500">
+                      {project.url}
+                      {project.actions.length > 0 && (
+                        <span> · {project.actions.length} action{project.actions.length === 1 ? "" : "s"} open</span>
+                      )}
+                    </p>
                   </div>
                   <div className="text-right">
                     <p className={`text-2xl font-semibold ${SCORE_COLOR(latest?.growthScore ?? null)}`}>

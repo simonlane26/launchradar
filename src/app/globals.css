@@ -24,3 +24,122 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* --- Motion --------------------------------------------------------------- */
+
+@keyframes lr-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes lr-sweep {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes lr-ping {
+  0% {
+    transform: scale(0.35);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(1.9);
+    opacity: 0;
+  }
+}
+
+@keyframes lr-blip {
+  0% {
+    transform: scale(0);
+    opacity: 0;
+  }
+  15% {
+    transform: scale(1.4);
+    opacity: 1;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.55;
+  }
+}
+
+@keyframes lr-seg {
+  from {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Content of each project sub-page fades in on navigation (see template.tsx) */
+.lr-page-in {
+  animation: lr-fade-in 150ms ease-out both;
+}
+
+/* Decorative hero radar fades up to its own (low) opacity on mount */
+@keyframes lr-radar-in {
+  from {
+    opacity: 0;
+  }
+}
+
+.lr-radar-in {
+  animation: lr-radar-in 1.6s ease-out both;
+}
+
+.lr-sweep {
+  animation: lr-sweep 1.6s linear infinite;
+}
+
+.lr-ping {
+  animation: lr-ping 2.4s ease-out infinite;
+}
+
+.lr-blip {
+  animation: lr-blip 0.6s ease-out both;
+}
+
+/* Score-breakdown dot segments light up one at a time; delay set inline */
+.lr-seg {
+  animation: lr-seg 260ms ease-out both;
+}
+
+@keyframes lr-step-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Backlog-card walkthrough steps stagger in on open; delay set inline */
+.lr-step-in {
+  animation: lr-step-in 350ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lr-page-in,
+  .lr-sweep,
+  .lr-ping,
+  .lr-blip,
+  .lr-seg,
+  .lr-step-in {
+    animation: none !important;
+  }
+}

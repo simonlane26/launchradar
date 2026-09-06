@@ -1,24 +1,28 @@
 "use client";
 
 import { useActionState } from "react";
-import { useFormStatus } from "react-dom";
 import { analyzeUrl } from "./actions";
+import { RadarScan } from "@/components/radar-scan";
 
-function SubmitButton() {
-  const { pending } = useFormStatus();
-  return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="flex h-12 items-center justify-center rounded-full bg-foreground px-8 text-base font-medium text-background transition-colors hover:bg-[#383838] disabled:opacity-50 dark:hover:bg-[#ccc]"
-    >
-      {pending ? "Analyzing…" : "Get your Growth Score"}
-    </button>
-  );
-}
+export function AnalyzeForm({ atCap = false }: { atCap?: boolean }) {
+  const [state, formAction, isPending] = useActionState(analyzeUrl, {
+    error: null as string | null,
+  });
 
-export function AnalyzeForm() {
-  const [state, formAction] = useActionState(analyzeUrl, { error: null as string | null });
+  if (isPending) {
+    return <RadarScan title="Scanning your site" />;
+  }
+
+  if (atCap) {
+    return (
+      <p className="text-sm text-zinc-500 dark:text-zinc-400">
+        You&apos;ve used all your project slots on this plan.{" "}
+        <a href="/pricing" className="font-medium underline">
+          Upgrade to add more →
+        </a>
+      </p>
+    );
+  }
 
   return (
     <form action={formAction} className="flex flex-col gap-3 sm:flex-row sm:items-start">
@@ -34,7 +38,12 @@ export function AnalyzeForm() {
           <p className="mt-2 pl-2 text-sm text-red-600 dark:text-red-400">{state.error}</p>
         )}
       </div>
-      <SubmitButton />
+      <button
+        type="submit"
+        className="flex h-12 items-center justify-center rounded-full bg-foreground px-8 text-base font-medium text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc]"
+      >
+        Get your Growth Score
+      </button>
     </form>
   );
 }

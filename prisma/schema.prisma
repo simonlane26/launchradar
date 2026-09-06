@@ -2,7 +2,8 @@
 // Multi-tenant: every row scoped by organisationId (Clerk org id), matching
 // the row-level isolation pattern used across Simon's other projects.
 //
-// Phase 1 (MVP) models only: Organisation, Project, Analysis.
+// Phase 1: Organisation, Project, Analysis.
+// Phase 2 (Launch Mode): LaunchPlan.
 // Later-phase models (Competitor, Opportunity, Experiment, Channel, Task, ...)
 // are sketched in CLAUDE.md and will be added when those phases start.
 
@@ -16,6 +17,12 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Tier {
+  FREE
+  BUILDER
+  GROWTH
+}
+
 /// Mirrors a Clerk organisation (or a personal/"default" org for solo users).
 /// Nothing auth-related is duplicated here beyond the Clerk id — Clerk stays
 /// the source of truth for membership, roles, and billing.
@@ -23,12 +30,47 @@ model Organisation {
   id          String   @id @default(cuid())
   clerkOrgId  String   @unique
   name        String
+  /// Pricing tier — written by the Stripe webhook (`/api/webhooks/stripe`)
+  /// once billing is live, or by hand via `scripts/tier.ts`. Limits live in
+  /// `src/lib/plan.ts` (PLAN_LIMITS).
+  tier        Tier     @default(FREE)
+  /// Stripe billing linkage — null until the org's first checkout.
+  stripeCustomerId     String?   @unique
+  stripeSubscriptionId String?   @unique
+  /// Mirror of the Stripe subscription status (active | trialing | past_due |
+  /// canceled | …) and the current period end, for "renews / ends on X" UI.
+  subscriptionStatus   String?
+  currentPeriodEnd     DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   projects Project[]
 
   @@map("organisations")
+}
+
+enum UsageMetric {
+  RADAR_SCAN
+  RADAR_RESULT
+  AI_ACTION
+  DRAFT_REPLY
+}
+
+/// Monthly usage counters — one row per (org, "YYYY-MM", metric).
+/// Incremented after a gated action succeeds; read before the next one to
+/// decide whether it's allowed. Project count is a live cap (count Project
+/// rows), not tracked here.
+model Usage {
+  id             String      @id @default(cuid())
+  organisationId String
+  period         String // "2026-09"
+  metric         UsageMetric
+  count          Int         @default(0)
+  updatedAt      DateTime    @updatedAt
+
+  @@unique([organisationId, period, metric])
+  @@index([organisationId])
+  @@map("usage")
 }
 
 enum ProjectStage {
@@ -56,7 +98,14 @@ model Project {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  analyses Analysis[]
+  analyses          Analysis[]
+  launchPlans       LaunchPlan[]
+  actions           Action[]
+  visibilityReports VisibilityReport[]
+  productProfile    ProductProfile?
+  radarQueries      RadarQuery[]
+  radarScans        RadarScan[]
+  opportunities     Opportunity[]
 
   @@index([organisationId])
   @@map("projects")
@@ -97,4 +146,323 @@ model Analysis {
   @@index([organisationId])
   @@index([projectId])
   @@map("analyses")
+}
+
+enum LaunchPlanStatus {
+  PENDING
+  RUNNING
+  COMPLETE
+  FAILED
+}
+
+/// One generated 30-day Launch Mode campaign for a Project. Built on top of
+/// the project's latest COMPLETE Analysis (needs its ICP / category /
+/// positioning data as input). Versioned per run like Analysis, so a founder
+/// can regenerate and compare plans.
+model LaunchPlan {
+  id             String  @id @default(cuid())
+  organisationId String
+  projectId      String
+  project        Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  /// The Analysis this plan was generated from (for traceability / diffing).
+  analysisId String?
+
+  status LaunchPlanStatus @default(PENDING)
+
+  // Structured output — see CLAUDE.md "LaunchPlan JSON shapes" for the
+  // documented shape of each field. JSON in Phase 2 for the same reason as
+  // Analysis: the shape is still moving.
+  summary     String? // one-paragraph overall launch strategy for THIS product
+  channels    Json? // [{ channel, verdict: "go"|"skip", priority, effort, rationale }]
+  schedule    Json? // [{ week: 1-4, theme, tasks: [{ day, title, detail }] }]
+  assets      Json? // [{ key, channel, format, title, body }] — ready-to-post copy
+  directories Json? // [{ name, url, category, submit: bool, rationale }]
+  rawOutput   Json? // Claude's raw structured output
+
+  errorMessage String?
+
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  @@index([organisationId])
+  @@index([projectId])
+  @@map("launch_plans")
+}
+
+enum ActionSource {
+  ANALYSIS
+  LAUNCH
+  VISIBILITY
+  MANUAL
+  SECURITY
+}
+
+enum ActionStatus {
+  TODO
+  DONE
+  SKIPPED
+}
+
+enum ActionImpact {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum ActionDeliverable {
+  TASK // a change the founder makes themselves
+  ASSET // a piece of content/page LaunchRadar can draft ("Create with AI")
+}
+
+/// The persistent, completable unit of work the project dashboard runs on —
+/// LaunchRadar's core "growth agent" primitive. Seeded from an Analysis's
+/// `nextActions` today; later phases (Opportunity Radar, First 10 Customers,
+/// Experiments) will create Actions too. Not versioned — an Action has a
+/// lifecycle (TODO → DONE/SKIPPED), unlike Analysis/LaunchPlan snapshots.
+model Action {
+  id             String  @id @default(cuid())
+  organisationId String
+  projectId      String
+  project        Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  /// The Analysis run that seeded this action (null for non-analysis sources).
+  analysisId String?
+
+  source        ActionSource      @default(ANALYSIS)
+  title         String
+  detail        String            // the "how" — short sub-steps
+  rationale     String            // the "why"
+  category      String            @default("Growth") // 2-3 word bucket, e.g. "Conversion", "SEO"
+  impact        ActionImpact      @default(MEDIUM)
+  deliverable   ActionDeliverable @default(TASK)
+  effortMinutes Int               @default(30)
+  rank          Int               @default(0) // lower = higher priority within a seed batch
+
+  /// Which Search & AI Visibility dimension this addresses (google_search,
+  /// ai_answers, brand_authority, community_presence, directory_presence),
+  /// when known explicitly — set on generation/seeding from a
+  /// VisibilityReport. Null for general/analysis-sourced actions; the
+  /// Visibility page falls back to a category heuristic for those
+  /// (`categoryToVisibilityDimension` in visibility.ts).
+  visibilityDimension String?
+
+  /// Set for actions whose CTA is "go do this elsewhere" rather than
+  /// "generate a guide" — currently only the SECURITY action, which links
+  /// to VibeCheck. When present the card renders an external link and shows
+  /// `steps` directly (no Claude call).
+  externalUrl String?
+
+  status      ActionStatus @default(TODO)
+  guide       String? // cached CTA output — intro/goal text (TASK) or the full drafted asset (ASSET)
+  steps       Json? // string[] — checkable sub-steps, TASK deliverables only (null for ASSET)
+  completedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organisationId])
+  @@index([projectId, status])
+  @@map("actions")
+}
+
+enum VisibilityReportStatus {
+  PENDING
+  RUNNING
+  COMPLETE
+  FAILED
+}
+
+/// Phase 3a — "How easy are you to find?" Combines deterministic on-site
+/// AEO/GEO checks, a Claude-scored 5-dimension visibility breakdown, and a
+/// live AI Visibility test (ICP prompts run through web-search-grounded
+/// Claude, brand vs competitor mention/citation). Versioned per run like
+/// Analysis/LaunchPlan; built on the latest COMPLETE Analysis. Findings seed
+/// `Action` rows (source VISIBILITY).
+model VisibilityReport {
+  id             String  @id @default(cuid())
+  organisationId String
+  projectId      String
+  project        Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  analysisId String?
+
+  status VisibilityReportStatus @default(PENDING)
+
+  // See CLAUDE.md "VisibilityReport JSON shapes".
+  overallScore Int? // 0-100, mean of the 5 dimension scores
+  dimensions   Json? // [{ key, label, score, acronym, detail }]
+  onSiteChecks Json? // [{ key, label, status: "pass"|"fail"|"unknown", detail }]
+  queries      Json? // [{ query, answerExcerpt, brandMentioned, brandCited, competitorsMentioned, competitorsCited }]
+  aiSummary    Json? // { brandMentionRate, brandCitationRate, competitorMentionRate, competitorCitationRate, leaderboard, gaps } | null
+  findings     Json? // [{ severity, area, title, why, suggestedActions: [{ title, category, deliverable, impact, effortMinutes }] }]
+  rawOutput    Json?
+
+  errorMessage String?
+
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  @@index([organisationId])
+  @@index([projectId])
+  @@map("visibility_reports")
+}
+
+/// Phase 3 — Opportunity Radar. Auto-generated from the latest Analysis on
+/// first visit, then founder-editable — unlike Analysis/LaunchPlan/
+/// VisibilityReport (immutable per-run snapshots), this is a single mutable
+/// row per project that the search-query generation reads from.
+model ProductProfile {
+  id             String  @id @default(cuid())
+  organisationId String
+  projectId      String  @unique
+  project        Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  // See CLAUDE.md "ProductProfile shape".
+  audiences         Json // string[] — who experiences the problem
+  problems          Json // string[] — phrased how a real person would describe them, not marketing copy
+  alternatives      Json // string[] — competitor/substitute product names
+  commercialIntents Json // string[] — situations that signal buying intent
+
+  edited Boolean @default(false) // has the founder customised the auto-draft?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organisationId])
+  @@map("product_profiles")
+}
+
+enum RadarIntentType {
+  BUYING
+  RECOMMENDATION
+  PROBLEM
+  COMPETITOR_PAIN
+}
+
+/// The search patterns Radar runs — generated once from the ProductProfile,
+/// then reused (not regenerated) across scans so feedback-driven weight
+/// nudges accumulate. See `recordOpportunityFeedback` in radar.ts.
+model RadarQuery {
+  id             String  @id @default(cuid())
+  organisationId String
+  projectId      String
+  project        Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  query      String
+  intentType RadarIntentType
+  weight     Float   @default(1.0) // nudged by feedback; ensureRadarQueries orders by this
+  active     Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organisationId])
+  @@index([projectId, active])
+  @@map("radar_queries")
+}
+
+enum RadarScanStatus {
+  PENDING
+  RUNNING
+  COMPLETE
+  FAILED
+}
+
+/// One run of the Radar pipeline: search → cheap filter → AI classify →
+/// score → save. Versioned per run like Analysis, so scan history is real.
+model RadarScan {
+  id             String  @id @default(cuid())
+  organisationId String
+  projectId      String
+  project        Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  status       RadarScanStatus @default(PENDING)
+  queriesRun   Int? // how many RadarQuery rows were searched
+  resultsFound Int? // raw results across all queries, before filtering
+  candidates   Int? // survivors of the cheap filter, sent to AI classification
+  saved        Int? // opportunities actually persisted
+
+  errorMessage String?
+
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  opportunities Opportunity[]
+
+  @@index([organisationId])
+  @@index([projectId])
+  @@map("radar_scans")
+}
+
+enum OpportunityIntent {
+  RECOMMENDATION_REQUEST
+  PROBLEM_FRUSTRATION
+  COMPETITOR_DISSATISFACTION
+  PURCHASE_RESEARCH
+  OTHER
+}
+
+enum OpportunityStatus {
+  NEW
+  REPLIED
+  DISMISSED
+}
+
+/// A real post/page where someone shows buying intent for this product's
+/// problem space — the payoff of the Radar pipeline. `@@unique([projectId,
+/// url])` is the cross-scan dedupe: re-scans never resurface the same URL.
+model Opportunity {
+  id             String    @id @default(cuid())
+  organisationId String
+  projectId      String
+  project        Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  scanId         String
+  scan           RadarScan @relation(fields: [scanId], references: [id], onDelete: Cascade)
+
+  source       String // "reddit" | "web" — inferred from the result's domain
+  url          String
+  title        String
+  excerpt      String
+  author       String?
+  publishedAt  DateTime?
+  queryMatched String // the RadarQuery.query text that surfaced this
+
+  intent         OpportunityIntent
+  audienceMatch  Int // 0-100
+  problemMatch   Int
+  purchaseIntent Int
+  productFit     Int
+  urgency        Int
+
+  aiReason        String
+  suggestedAction String
+  competitorName  String? // set when intent = COMPETITOR_DISSATISFACTION
+  advantage       String? // "your advantage" line, same case
+
+  opportunityScore Int // 0-100, computed in code — see CLAUDE.md scoring formula
+  status           OpportunityStatus @default(NEW)
+  reply            String? // cached "Draft reply" output, generated on demand
+
+  createdAt DateTime @default(now())
+
+  feedback OpportunityFeedback[]
+
+  @@unique([projectId, url])
+  @@index([organisationId])
+  @@index([projectId, status])
+  @@map("opportunities")
+}
+
+model OpportunityFeedback {
+  id            String      @id @default(cuid())
+  opportunityId String
+  opportunity   Opportunity @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+
+  rating String // "up" | "down"
+
+  createdAt DateTime @default(now())
+
+  @@index([opportunityId])
+  @@map("opportunity_feedback")
 }
