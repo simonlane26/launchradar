@@ -77,7 +77,7 @@ different channels. LaunchRadar's differentiation, in priority order:
 ```
 prisma/schema.prisma        Organisation (+ tier + stripe fields), Project, Analysis, LaunchPlan,
                               Action, VisibilityReport, ProductProfile, RadarQuery, RadarScan,
-                              Opportunity, OpportunityFeedback, Usage
+                              Opportunity, OpportunityFeedback, Usage, Subscriber
 src/lib/prisma.ts           Prisma client singleton
 src/lib/plan.ts             Pricing-tier limits (PLAN_LIMITS) + monthly usage metering —
                               the single source of truth behind the /pricing table
@@ -126,6 +126,12 @@ src/app/billing/actions.ts   startCheckout(tier, cadence) → hosted Checkout re
                               openBillingPortal() → hosted Customer Portal redirect
 src/app/api/webhooks/stripe/route.ts   Verifies signature, syncs subscription → Organisation.tier
                               (the real writer once billing is live)
+src/lib/email.ts           Resend client (optional — null when RESEND_API_KEY unset) +
+                              sendPlaybookEmail() — the landing "first-users playbook" autoresponder
+src/app/playbook-actions.ts   subscribePlaybook(email) — 1-field landing signup: upsert Subscriber,
+                              send the playbook once (playbookSentAt gate), IP rate-limited
+src/components/playbook-signup.tsx   The subtle landing email form + a no-op analytics event
+                              (plausible/gtag/dataLayer) so signups count separately from URL runs
 src/components/json-ld.tsx  <JsonLd> — server-renders a schema.org <script type=ld+json>
 src/app/sitemap.ts         Public routes only (static + every /compare/[slug])
 src/app/robots.ts          Allow all; disallow /dashboard, /projects/, /sign-in, /sign-up
@@ -531,6 +537,18 @@ by AI assistants when someone asks "how do I market my vibe-coded app" or
   automatically creates its `/compare/[slug]` page, sitemap row and hub
   card. Keep comparisons fair — every entry has a "choose the alternative
   when" list; AI assistants discount a one-sided comparison page.
+- **Homepage** (`src/app/page.tsx`): plain-language `<h1>` ("what is it"),
+  brand tagline demoted to a non-heading kicker, then real `<h2>`/`<h3>`
+  sections ("How LaunchRadar works", "…not a 50-item checklist") for a
+  crawlable outline. Under the hero CTA sits the low-key **first-users
+  playbook** email form (`PlaybookSignup`) for visitors not ready to run a
+  score: one field → `subscribePlaybook` → `Subscriber` row → one
+  autoresponder via Resend (`sendPlaybookEmail`, checklist copy lives in
+  `src/lib/email.ts`) with a UTM'd link back to `/sign-up`. Conversion is
+  measurable two ways: `count(Subscriber where source='playbook')` vs
+  `count(Project)`, and the client fires a `playbook_signup` analytics event
+  (no-op until Plausible/GA is wired). Without `RESEND_API_KEY` the form
+  still captures the address; the playbook goes out when the key is set.
 - Not done yet: real OG images (`opengraph-image`), a shared marketing
   footer, per-`[slug]` `Article`/`datePublished` metadata, `HowTo` schema
   on walkthrough content.

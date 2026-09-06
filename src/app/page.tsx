@@ -3,6 +3,7 @@ import { Show } from "@clerk/nextjs";
 import RadarBackground from "@/components/radar-background";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
+import { PlaybookSignup } from "@/components/playbook-signup";
 
 const STEPS = [
   {
@@ -63,6 +64,8 @@ export default function Home() {
                 See pricing
               </Link>
             </div>
+
+            <PlaybookSignup />
           </div>
         </section>
 

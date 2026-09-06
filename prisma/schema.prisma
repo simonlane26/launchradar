@@ -473,3 +473,18 @@ model OpportunityFeedback {
   @@index([opportunityId])
   @@map("opportunity_feedback")
 }
+
+/// Marketing email capture — the landing-page "first-users playbook" form.
+/// Not tenant-scoped (no account yet). `source` distinguishes campaigns;
+/// `playbookSentAt` gates the one-time autoresponder.
+model Subscriber {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  source         String    @default("playbook") // which form / campaign
+  playbookSentAt DateTime?
+  unsubscribedAt DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@map("subscribers")
+}
