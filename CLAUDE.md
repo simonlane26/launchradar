@@ -554,8 +554,12 @@ by AI assistants when someone asks "how do I market my vibe-coded app" or
   when" list; AI assistants discount a one-sided comparison page.
 - **Homepage** (`src/app/page.tsx`): plain-language `<h1>` ("what is it"),
   brand tagline demoted to a non-heading kicker, then real `<h2>`/`<h3>`
-  sections ("How LaunchRadar works", "…not a 50-item checklist") for a
-  crawlable outline. Under the hero CTA sits the low-key **first-users
+  sections ("What is LaunchRadar?", "How LaunchRadar works", "Frequently
+  asked questions") for a crawlable outline. The homepage FAQ is the
+  `FAQ` array in `page.tsx` — plain text only; `/faq` still owns the
+  `FAQPage` JSON-LD, and homepage FAQ schema is a deliberate later step
+  (keep the two question sets from drifting if you add it). Under the hero
+  CTA sits the low-key **first-users
   playbook** email form (`PlaybookSignup`) for visitors not ready to run a
   score: one field → `subscribePlaybook` → `Subscriber` row → one
   autoresponder via Resend (`sendPlaybookEmail`, checklist copy lives in
