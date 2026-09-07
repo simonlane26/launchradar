@@ -552,10 +552,15 @@ by AI assistants when someone asks "how do I market my vibe-coded app" or
   automatically creates its `/compare/[slug]` page, sitemap row and hub
   card. Keep comparisons fair — every entry has a "choose the alternative
   when" list; AI assistants discount a one-sided comparison page.
-- **Homepage** (`src/app/page.tsx`): plain-language `<h1>` ("what is it"),
+- **Homepage** (`src/app/page.tsx`): keyword-led `<h1>` ("LaunchRadar: A
+  Prioritized Plan to Find Your App's First Users") + a one-line subhead,
   brand tagline demoted to a non-heading kicker, then real `<h2>`/`<h3>`
-  sections ("What is LaunchRadar?", "How LaunchRadar works", "Frequently
-  asked questions") for a crawlable outline. The homepage FAQ is the
+  sections in this order — "What LaunchRadar Does", "Who It's For", "How It
+  Works" (an `<h3>` "Step 1/2/3: …" per step, from the `STEPS` array),
+  "Why Founders Use It", "Frequently asked questions" — a strict
+  H1→H2→H3 outline with exactly one H1. `page.tsx` exports its own
+  `metadata` (`title.absolute` + `description`) worded to mirror the H1 and
+  subhead, overriding the layout defaults for `/`. The homepage FAQ is the
   `FAQ` array in `page.tsx` — plain text only; `/faq` still owns the
   `FAQPage` JSON-LD, and homepage FAQ schema is a deliberate later step
   (keep the two question sets from drifting if you add it). Under the hero

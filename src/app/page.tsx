@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Show } from "@clerk/nextjs";
 import RadarBackground from "@/components/radar-background";
@@ -5,18 +6,30 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { PlaybookSignup } from "@/components/playbook-signup";
 
+const META_TITLE = "LaunchRadar: A Prioritized Plan to Find Your App's First Users";
+const META_DESCRIPTION =
+  "LaunchRadar turns your new app into a step-by-step user-acquisition plan — built for indie and AI-assisted founders who need traction, not more marketing theory.";
+
+export const metadata: Metadata = {
+  title: { absolute: META_TITLE },
+  description: META_DESCRIPTION,
+  alternates: { canonical: "/" },
+  openGraph: { title: META_TITLE, description: META_DESCRIPTION, url: "/" },
+  twitter: { title: META_TITLE, description: META_DESCRIPTION },
+};
+
 const STEPS = [
   {
-    h: "1. Point it at your URL",
-    p: "LaunchRadar reads your live site, works out your category, ideal customer and positioning, and runs deterministic technical checks. No long onboarding form.",
+    h: "Step 1: Connect your product",
+    p: "Paste your URL. LaunchRadar reads your live site, works out your category, ideal customer and positioning, and runs deterministic technical checks — no long onboarding form.",
   },
   {
-    h: "2. Get a Growth Score and a ranked backlog",
-    p: "A 0–100 readiness score across six dimensions, plus a prioritised list of the specific moves that matter for your product — highest impact, lowest effort first.",
+    h: "Step 2: Get your prioritized growth plan",
+    p: "You get a 0–100 Growth Score across six dimensions and a ranked backlog of the specific moves that matter for your product — highest impact, lowest effort first — each with a draft or a step-by-step guide.",
   },
   {
-    h: "3. Work the plan",
-    p: "Every task comes with a draft or a step-by-step walkthrough. Opportunity Radar finds people already asking for what you built; Launch Mode turns it into a 30-day campaign.",
+    h: "Step 3: Execute and track results",
+    p: "Work the backlog, mark tasks done, and watch your projected score climb. Opportunity Radar surfaces people already asking for what you built; Launch Mode turns the plan into a 30-day campaign.",
   },
 ];
 
@@ -68,12 +81,11 @@ export default function Home() {
               You vibe coded the app. Now vibe market it.
             </p>
             <h1 className="text-3xl font-semibold tracking-tight text-black sm:text-4xl md:text-[2.75rem] md:leading-[1.15] dark:text-zinc-50">
-              LaunchRadar helps indie and AI-assisted founders find their first users with a
-              prioritised, step-by-step growth plan.
+              LaunchRadar: A Prioritized Plan to Find Your App&apos;s First Users
             </h1>
             <p className="max-w-lg text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-              Give LaunchRadar your product&apos;s URL and get back a ranked backlog of growth tasks
-              tailored to what you built — not a generic marketing checklist.
+              LaunchRadar turns your new app into a step-by-step user-acquisition plan — built for
+              indie and AI-assisted founders who need traction, not more marketing theory.
             </p>
             <div className="flex flex-col items-center gap-4 pt-2 sm:flex-row">
               <Show when="signed-out">
@@ -137,30 +149,78 @@ export default function Home() {
 
         <section className="mx-auto w-full max-w-3xl px-6 py-16">
           <h2 className="text-2xl font-semibold tracking-tight text-black dark:text-zinc-50">
-            What is LaunchRadar?
+            What LaunchRadar Does
           </h2>
           <p className="mt-4 leading-7 text-zinc-600 dark:text-zinc-400">
-            LaunchRadar is a growth planning tool for indie founders who built their product fast
-            with AI tools — and now have no idea how to get their first users.
+            If you just launched and don&apos;t know how to find your first users, LaunchRadar gives
+            you a prioritized action plan in minutes. It reads your live product, works out who it&apos;s
+            for and where those people are, and hands back a ranked list of growth tasks — highest
+            impact, lowest effort first — with a draft or a walkthrough for each one.
           </p>
-          <p className="mt-4 leading-7 text-zinc-600 dark:text-zinc-400">
-            You didn&apos;t spend six weeks writing code by hand. You shouldn&apos;t spend six weeks
-            guessing at a marketing plan either. LaunchRadar looks at your product and your stage,
-            then gives you a prioritised, plain-English list of what to actually do this week to get
-            in front of real users — not a 40-slide &ldquo;growth strategy&rdquo; deck you&apos;ll
-            never open again.
-          </p>
-          <p className="mt-4 leading-7 text-zinc-600 dark:text-zinc-400">
-            No fluff. No &ldquo;build a personal brand&rdquo; advice. Just the next five things worth
-            doing, ranked by effort vs. impact.
-          </p>
+        </section>
+
+        <section className="mx-auto w-full max-w-3xl px-6 pb-16">
+          <h2 className="text-2xl font-semibold tracking-tight text-black dark:text-zinc-50">
+            Who It&apos;s For
+          </h2>
+          <ul className="mt-4 flex list-disc flex-col gap-2 pl-5 leading-7 text-zinc-600 dark:text-zinc-400">
+            <li>Indie and solo founders who can build a product but have never run a marketing plan.</li>
+            <li>
+              AI-assisted and no-code builders who shipped fast and skipped the &ldquo;figure out
+              distribution&rdquo; step.
+            </li>
+            <li>Anyone with a live app stuck near zero users who wants a clear next move, not more theory.</li>
+          </ul>
+        </section>
+
+        <section className="mx-auto w-full max-w-3xl px-6 pb-16">
+          <h2 className="text-2xl font-semibold tracking-tight text-black dark:text-zinc-50">
+            How It Works
+          </h2>
+          <div className="mt-6 flex flex-col gap-6">
+            {STEPS.map((step) => (
+              <div key={step.h}>
+                <h3 className="font-medium text-black dark:text-zinc-100">{step.h}</h3>
+                <p className="mt-1 leading-7 text-zinc-600 dark:text-zinc-400">{step.p}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="mx-auto w-full max-w-3xl px-6 pb-16">
+          <h2 className="text-2xl font-semibold tracking-tight text-black dark:text-zinc-50">
+            Why Founders Use It
+          </h2>
+          <ul className="mt-4 flex list-disc flex-col gap-2 pl-5 leading-7 text-zinc-600 dark:text-zinc-400">
+            <li>
+              <strong className="font-medium text-black dark:text-zinc-100">
+                It&apos;s specific to your product.
+              </strong>{" "}
+              A consumer app, a B2B tool and a developer product get different plans — not the same
+              50-item checklist.
+            </li>
+            <li>
+              <strong className="font-medium text-black dark:text-zinc-100">
+                It tells you what to skip.
+              </strong>{" "}
+              LaunchRadar calls out the channels that won&apos;t work for you so you don&apos;t waste
+              weeks on them.
+            </li>
+            <li>
+              <strong className="font-medium text-black dark:text-zinc-100">
+                It&apos;s plain-language and fast.
+              </strong>{" "}
+              Every task says what to do, why, and how long it takes. Your first plan is ready in
+              about a minute.
+            </li>
+          </ul>
           <div className="mt-6">
             <Show when="signed-out">
               <Link
                 href="/sign-up"
                 className="inline-flex h-11 items-center justify-center rounded-full bg-foreground px-6 text-sm font-medium text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc]"
               >
-                Get my launch plan
+                Get your plan
               </Link>
             </Show>
             <Show when="signed-in">
@@ -172,20 +232,6 @@ export default function Home() {
               </Link>
             </Show>
           </div>
-        </section>
-
-        <section className="mx-auto w-full max-w-3xl px-6 pb-16">
-          <h2 className="text-2xl font-semibold tracking-tight text-black dark:text-zinc-50">
-            How LaunchRadar works
-          </h2>
-          <ol className="mt-6 flex flex-col gap-6">
-            {STEPS.map((step) => (
-              <li key={step.h}>
-                <h3 className="font-medium text-black dark:text-zinc-100">{step.h}</h3>
-                <p className="mt-1 leading-7 text-zinc-600 dark:text-zinc-400">{step.p}</p>
-              </li>
-            ))}
-          </ol>
         </section>
 
         <section className="mx-auto w-full max-w-3xl px-6 pb-24">
