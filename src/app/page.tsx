@@ -12,6 +12,13 @@ const META_TITLE = "LaunchRadar: A Prioritized Plan to Find Your App's First Use
 // `description`, so the page's visible and machine-readable definitions match.
 const META_DESCRIPTION = BRAND.oneLiner;
 
+// Primary CTA skin — a vibrant accent (the app's radar/emerald) so the main
+// action reads as the main action against the outline + text links beside it.
+// emerald-700 on white clears WCAG AA; hover brightens to emerald-600.
+// Compose with per-placement sizing (`h-* px-* text-*`).
+const CTA_PRIMARY =
+  "inline-flex items-center justify-center rounded-full bg-emerald-700 font-medium text-white shadow-sm transition-colors hover:bg-emerald-600";
+
 export const metadata: Metadata = {
   title: { absolute: META_TITLE },
   description: META_DESCRIPTION,
@@ -37,36 +44,28 @@ const STEPS = [
 
 const FAQ = [
   {
-    q: "What does LaunchRadar actually do?",
-    a: "LaunchRadar generates a prioritised action plan for finding your first users, based on your product, your stage, and how much time you have. It’s built specifically for solo founders and small teams who shipped fast with AI or no-code tools and skipped the “figure out marketing” step.",
+    q: "Does this work for B2B products, or just consumer apps?",
+    a: "Both. LaunchRadar builds the plan around your product’s category and who it’s for, so a B2B SaaS tool, a consumer app and a developer tool each get different channels and tactics — not one shared checklist.",
   },
   {
-    q: "Who is LaunchRadar for?",
-    a: "Solo and small-team founders — especially “vibe coders” who used AI tools to build their product quickly. If you have a live product but no clear plan for getting users, that’s who this is for.",
+    q: "How is this different from asking ChatGPT for a marketing plan?",
+    a: "ChatGPT answers from your prompt. LaunchRadar reads your live site first, scores it so you have a baseline you can track over time, turns the plan into a backlog of tasks with a draft or a walkthrough for each, and tells you which channels to skip.",
   },
   {
-    q: "How is this different from generic marketing advice?",
-    a: "Generic advice tells you to “post on Twitter” or “do SEO” with no context. LaunchRadar looks at where you actually are — pre-launch, just launched, stuck at zero users — and tells you the three to five things worth doing right now, in order, based on your specific situation.",
+    q: "Can I use it before I’ve launched?",
+    a: "Yes. It works for pre-launch, just-launched and stuck-at-zero-users products — the plan changes based on where you are.",
   },
   {
-    q: "Do I need a marketing background to use it?",
-    a: "No. LaunchRadar is built for people who can build a product but have never run a marketing plan in their life. Everything is plain-language: what to do, why, and how long it should take.",
+    q: "What do you need from me to get started?",
+    a: "Just your URL. LaunchRadar reads the live site and runs its checks itself — there’s no long onboarding questionnaire — and your first plan is ready in about a minute.",
   },
   {
-    q: "Is this a course or a tool?",
-    a: "It’s a tool. You get a plan, not a curriculum. No videos to sit through — just a prioritised list you can act on the same day.",
+    q: "Is my data private?",
+    a: "LaunchRadar only needs your public site URL and anything you choose to add to a product profile; card details go straight to Stripe, never to us. Your projects are scoped to your account and aren’t visible to other users. We don’t sell your data, use it for advertising, or use your content to train AI models. Delete your account and the data is removed or anonymised within 90 days. Full detail is in the privacy policy.",
   },
   {
     q: "How much does it cost?",
     a: "There’s a free plan to start on, no card required. Paid plans are Builder at £12/month and Growth at £24/month — each around 20% cheaper billed annually — and they raise the monthly limits (projects, Opportunity Radar scans, AI-drafted assets) and unlock the full Growth Backlog and the live AI visibility test. The pricing page has the full breakdown.",
-  },
-  {
-    q: "How long does it take to get my plan?",
-    a: "Usually under a minute. You give LaunchRadar your URL, it reads your live site and runs its checks, and your Growth Score and ranked plan are ready in about 30–60 seconds — there’s no long onboarding form.",
-  },
-  {
-    q: "Can I use this if I haven’t launched yet?",
-    a: "Yes. LaunchRadar works for pre-launch, just-launched, and stuck-at-zero-users founders — the plan adjusts based on where you are.",
   },
 ];
 
@@ -93,18 +92,12 @@ export default function Home() {
             </p>
             <div className="flex flex-col items-center gap-4 pt-2 sm:flex-row">
               <Show when="signed-out">
-                <Link
-                  href="/sign-up"
-                  className="flex h-12 items-center justify-center rounded-full bg-foreground px-8 text-base font-medium text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc]"
-                >
+                <Link href="/sign-up" className={`${CTA_PRIMARY} h-12 px-8 text-base`}>
                   Get your Growth Score
                 </Link>
               </Show>
               <Show when="signed-in">
-                <Link
-                  href="/dashboard"
-                  className="flex h-12 items-center justify-center rounded-full bg-foreground px-8 text-base font-medium text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc]"
-                >
+                <Link href="/dashboard" className={`${CTA_PRIMARY} h-12 px-8 text-base`}>
                   Go to dashboard
                 </Link>
               </Show>
@@ -220,18 +213,12 @@ export default function Home() {
           </ul>
           <div className="mt-6">
             <Show when="signed-out">
-              <Link
-                href="/sign-up"
-                className="inline-flex h-11 items-center justify-center rounded-full bg-foreground px-6 text-sm font-medium text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc]"
-              >
+              <Link href="/sign-up" className={`${CTA_PRIMARY} h-11 px-6 text-sm`}>
                 Get your plan
               </Link>
             </Show>
             <Show when="signed-in">
-              <Link
-                href="/dashboard"
-                className="inline-flex h-11 items-center justify-center rounded-full bg-foreground px-6 text-sm font-medium text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc]"
-              >
+              <Link href="/dashboard" className={`${CTA_PRIMARY} h-11 px-6 text-sm`}>
                 Go to dashboard
               </Link>
             </Show>
