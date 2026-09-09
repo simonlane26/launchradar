@@ -585,7 +585,10 @@ the first `<body>` child. Unset → no GTM at all, so dev traffic stays out of
 analytics unless you opt in. All actual tags (GA4, Ads, etc.) are configured
 in the GTM dashboard, not this repo; the `playbook_signup` `dataLayer` push in
 `playbook-signup.tsx` is the one first-party event. CSP allows the GTM + GA4
-origins via the `gtm*` consts in `next.config.ts`.
+origins via the `gtm*` consts in `next.config.ts`, and the Meta Pixel a tag in
+the container fires (`fbevents.js` / `connect.facebook.net` /
+`www.facebook.com`) via the `metaPixel*` consts — **any new tag firing to a
+fresh origin needs its origin added there or the browser blocks it**.
 - Not done yet: real OG images (`opengraph-image`), a shared marketing
   footer, per-`[slug]` `Article`/`datePublished` metadata, `HowTo` schema
   on walkthrough content.
@@ -639,7 +642,9 @@ Four emails, each fired from the flow it belongs to (no cron, no webhook):
 - **Security headers**: `next.config.ts` `headers()` sets CSP (self + Clerk
   (host derived from the publishable key) + Turnstile for scripts/frames +
   Google Tag Manager / GA4 origins (`gtm*` consts — only reachable once
-  `NEXT_PUBLIC_GTM_ID` is set, which is what loads GTM in `layout.tsx`);
+  `NEXT_PUBLIC_GTM_ID` is set, which is what loads GTM in `layout.tsx`) +
+  Meta Pixel origins (`metaPixel*` consts) for the pixel tag in the GTM
+  container;
   `img-src` also allows `api.producthunt.com` for the landing review badge;
   `script-src` still has `'unsafe-inline'` — see the file's note on the
   nonce upgrade), HSTS (2y, preload), `X-Frame-Options: DENY`,

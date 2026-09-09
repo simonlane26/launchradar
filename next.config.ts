@@ -32,8 +32,9 @@ const clerkAccounts =
  * Content-Security-Policy. Allows: same-origin, Clerk (its Frontend API host
  * — dev or custom-domain — plus hosted JS, telemetry, account portal, and
  * the Cloudflare Turnstile bot-check), Google Tag Manager + GA4 (see the
- * `gtm*` consts below — only active once NEXT_PUBLIC_GTM_ID is set), inline
- * styles (Clerk + Tailwind-in-JS need them), and data/blob images.
+ * `gtm*` consts below — only active once NEXT_PUBLIC_GTM_ID is set) and the
+ * Meta Pixel that container fires (`metaPixel*` consts), inline styles
+ * (Clerk + Tailwind-in-JS need them), and data/blob images.
  *
  * Known weakening: `script-src` keeps `'unsafe-inline'` because Next injects
  * inline hydration scripts and this app is not yet on nonce-based CSP.
@@ -59,19 +60,29 @@ const gtmImg = "https://www.googletagmanager.com https://*.google-analytics.com 
 const gtmConnect =
   "https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com https://*.g.doubleclick.net";
 
+/**
+ * Meta (Facebook) Pixel — fired by a tag inside the GTM container, not loaded
+ * by this app directly. `fbevents.js` comes from connect.facebook.net; the
+ * tracking pixel and CAPI-style beacons hit www.facebook.com. Drop this group
+ * if the Meta Pixel tag is ever removed from the container.
+ */
+const metaPixelScript = "https://connect.facebook.net";
+const metaPixelImg = "https://www.facebook.com";
+const metaPixelConnect = "https://connect.facebook.net https://www.facebook.com";
+
 const csp = [
   "default-src 'self'",
   "base-uri 'self'",
   "object-src 'none'",
   "frame-ancestors 'none'",
   `form-action 'self' ${clerkScript}`,
-  `script-src 'self' 'unsafe-inline' ${isDev ? "'unsafe-eval'" : ""} ${clerkScript} ${gtmScript} https://challenges.cloudflare.com`,
+  `script-src 'self' 'unsafe-inline' ${isDev ? "'unsafe-eval'" : ""} ${clerkScript} ${gtmScript} ${metaPixelScript} https://challenges.cloudflare.com`,
   "style-src 'self' 'unsafe-inline'",
-  `img-src 'self' data: blob: https://img.clerk.com https://api.producthunt.com ${gtmImg}`,
+  `img-src 'self' data: blob: https://img.clerk.com https://api.producthunt.com ${gtmImg} ${metaPixelImg}`,
   "font-src 'self' data:",
   "worker-src 'self' blob:",
   `frame-src 'self' https://challenges.cloudflare.com ${clerkScript} ${gtmScript}`,
-  `connect-src 'self' ${clerkConnect} ${gtmConnect}${isDev ? " ws: http://localhost:*" : ""}`,
+  `connect-src 'self' ${clerkConnect} ${gtmConnect} ${metaPixelConnect}${isDev ? " ws: http://localhost:*" : ""}`,
   "manifest-src 'self'",
   "upgrade-insecure-requests",
 ]
