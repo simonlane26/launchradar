@@ -20,9 +20,15 @@ export function absoluteUrl(path = "/"): string {
 export const BRAND = {
   name: "LaunchRadar",
   tagline: "You vibe coded the app. Now vibe market it.",
-  /** One plain declarative sentence — the line an answer engine can lift verbatim. */
+  /**
+   * One plain declarative sentence — the line an answer engine can lift
+   * verbatim. Kept identical to the homepage hero subheadline (rendered from
+   * this same constant) and used as the `description` in both the
+   * Organization and SoftwareApplication JSON-LD, so the visible definition
+   * and the structured-data definition are word-for-word the same string.
+   */
   oneLiner:
-    "LaunchRadar is an AI growth agent for vibe-coded apps: give it your URL and it tells you who needs your product, where those people are, and what to do this week to reach them — then does as much of the work as it can itself.",
+    "LaunchRadar is a growth tool that helps indie and no-code founders find their first users after launching a product.",
   description:
     "LaunchRadar turns a URL into a Growth Score, a prioritised Growth Backlog, and an Opportunity Radar that finds people already asking for what you built — tailored to your product, not a generic 50-item checklist.",
 } as const;

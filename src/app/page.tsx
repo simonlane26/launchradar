@@ -5,10 +5,12 @@ import RadarBackground from "@/components/radar-background";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { PlaybookSignup } from "@/components/playbook-signup";
+import { BRAND } from "@/lib/seo";
 
 const META_TITLE = "LaunchRadar: A Prioritized Plan to Find Your App's First Users";
-const META_DESCRIPTION =
-  "LaunchRadar turns your new app into a step-by-step user-acquisition plan — built for indie and AI-assisted founders who need traction, not more marketing theory.";
+// Same one-sentence definition as the hero subheadline and the JSON-LD
+// `description`, so the page's visible and machine-readable definitions match.
+const META_DESCRIPTION = BRAND.oneLiner;
 
 export const metadata: Metadata = {
   title: { absolute: META_TITLE },
@@ -83,9 +85,11 @@ export default function Home() {
             <h1 className="text-3xl font-semibold tracking-tight text-black sm:text-4xl md:text-[2.75rem] md:leading-[1.15] dark:text-zinc-50">
               LaunchRadar: A Prioritized Plan to Find Your App&apos;s First Users
             </h1>
+            {/* Plain one-sentence definition, directly under the H1 and above the
+                fold. Rendered from BRAND.oneLiner so it stays word-for-word
+                identical to the JSON-LD `description`. */}
             <p className="max-w-lg text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-              LaunchRadar turns your new app into a step-by-step user-acquisition plan — built for
-              indie and AI-assisted founders who need traction, not more marketing theory.
+              {BRAND.oneLiner}
             </p>
             <div className="flex flex-col items-center gap-4 pt-2 sm:flex-row">
               <Show when="signed-out">
