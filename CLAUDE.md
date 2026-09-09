@@ -571,8 +571,21 @@ by AI assistants when someone asks "how do I market my vibe-coded app" or
   `src/lib/email.ts`) with a UTM'd link back to `/sign-up`. Conversion is
   measurable two ways: `count(Subscriber where source='playbook')` vs
   `count(Project)`, and the client fires a `playbook_signup` analytics event
-  (no-op until Plausible/GA is wired). Without `RESEND_API_KEY` the form
-  still captures the address; the playbook goes out when the key is set.
+  (`window.dataLayer.push` / `gtag` / `plausible` — live once a GTM container
+  is configured via `NEXT_PUBLIC_GTM_ID`, see below). Without `RESEND_API_KEY`
+  the form still captures the address; the playbook goes out when the key is set.
+
+### Analytics (Google Tag Manager)
+
+`NEXT_PUBLIC_GTM_ID` (a `GTM-XXXXXXX` container id, public — ships in the
+HTML) wires GTM site-wide from `src/app/layout.tsx`: the
+`@next/third-parties/google` `GoogleTagManager` component (dataLayer init +
+`gtm.js`, loaded `afterInteractive`) plus a hand-rolled `<noscript>` iframe as
+the first `<body>` child. Unset → no GTM at all, so dev traffic stays out of
+analytics unless you opt in. All actual tags (GA4, Ads, etc.) are configured
+in the GTM dashboard, not this repo; the `playbook_signup` `dataLayer` push in
+`playbook-signup.tsx` is the one first-party event. CSP allows the GTM + GA4
+origins via the `gtm*` consts in `next.config.ts`.
 - Not done yet: real OG images (`opengraph-image`), a shared marketing
   footer, per-`[slug]` `Article`/`datePublished` metadata, `HowTo` schema
   on walkthrough content.
@@ -624,7 +637,9 @@ Four emails, each fired from the flow it belongs to (no cron, no webhook):
 - **No API route handlers.** All mutations are Server Actions, each starting
   with `requireOrganisation()` then an org-scoped row lookup (IDOR-safe).
 - **Security headers**: `next.config.ts` `headers()` sets CSP (self + Clerk
-  (host derived from the publishable key) + Turnstile for scripts/frames;
+  (host derived from the publishable key) + Turnstile for scripts/frames +
+  Google Tag Manager / GA4 origins (`gtm*` consts — only reachable once
+  `NEXT_PUBLIC_GTM_ID` is set, which is what loads GTM in `layout.tsx`);
   `img-src` also allows `api.producthunt.com` for the landing review badge;
   `script-src` still has `'unsafe-inline'` — see the file's note on the
   nonce upgrade), HSTS (2y, preload), `X-Frame-Options: DENY`,

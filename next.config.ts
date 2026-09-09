@@ -31,8 +31,9 @@ const clerkAccounts =
 /**
  * Content-Security-Policy. Allows: same-origin, Clerk (its Frontend API host
  * — dev or custom-domain — plus hosted JS, telemetry, account portal, and
- * the Cloudflare Turnstile bot-check), inline styles (Clerk + Tailwind-in-JS
- * need them), and data/blob images. No other external script origins.
+ * the Cloudflare Turnstile bot-check), Google Tag Manager + GA4 (see the
+ * `gtm*` consts below — only active once NEXT_PUBLIC_GTM_ID is set), inline
+ * styles (Clerk + Tailwind-in-JS need them), and data/blob images.
  *
  * Known weakening: `script-src` keeps `'unsafe-inline'` because Next injects
  * inline hydration scripts and this app is not yet on nonce-based CSP.
@@ -46,19 +47,31 @@ const clerkConnect = [clerkOrigin, clerkAccounts, "https://*.clerk.accounts.dev"
   .filter(Boolean)
   .join(" ");
 
+/**
+ * Google Tag Manager (loaded site-wide when NEXT_PUBLIC_GTM_ID is set) plus
+ * the origins GA4 — the tag almost every GTM container ends up firing — needs
+ * for its collect/beacon requests and pixels. If a container is later set up
+ * with Google Ads / Floodlight, add `https://*.googleadservices.com` and
+ * `https://www.google.<tld>` here too.
+ */
+const gtmScript = "https://www.googletagmanager.com";
+const gtmImg = "https://www.googletagmanager.com https://*.google-analytics.com https://*.g.doubleclick.net";
+const gtmConnect =
+  "https://www.googletagmanager.com https://*.google-analytics.com https://*.analytics.google.com https://*.g.doubleclick.net";
+
 const csp = [
   "default-src 'self'",
   "base-uri 'self'",
   "object-src 'none'",
   "frame-ancestors 'none'",
   `form-action 'self' ${clerkScript}`,
-  `script-src 'self' 'unsafe-inline' ${isDev ? "'unsafe-eval'" : ""} ${clerkScript} https://challenges.cloudflare.com`,
+  `script-src 'self' 'unsafe-inline' ${isDev ? "'unsafe-eval'" : ""} ${clerkScript} ${gtmScript} https://challenges.cloudflare.com`,
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https://img.clerk.com https://api.producthunt.com",
+  `img-src 'self' data: blob: https://img.clerk.com https://api.producthunt.com ${gtmImg}`,
   "font-src 'self' data:",
   "worker-src 'self' blob:",
-  `frame-src 'self' https://challenges.cloudflare.com ${clerkScript}`,
-  `connect-src 'self' ${clerkConnect}${isDev ? " ws: http://localhost:*" : ""}`,
+  `frame-src 'self' https://challenges.cloudflare.com ${clerkScript} ${gtmScript}`,
+  `connect-src 'self' ${clerkConnect} ${gtmConnect}${isDev ? " ws: http://localhost:*" : ""}`,
   "manifest-src 'self'",
   "upgrade-insecure-requests",
 ]
