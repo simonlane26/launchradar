@@ -3,13 +3,12 @@ import Link from "next/link";
 /** Shared footer for the public marketing + legal pages. */
 export function SiteFooter() {
   const year = new Date().getFullYear();
-  const link =
-    "text-zinc-500 transition-colors hover:text-black dark:hover:text-zinc-100";
+  const link = "text-faint transition-colors hover:text-ink";
 
   return (
-    <footer className="border-t border-zinc-200 bg-zinc-50 px-6 py-8 text-sm dark:border-zinc-800 dark:bg-black">
-      <div className="mx-auto flex w-full max-w-4xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-zinc-500">
+    <footer className="border-t border-edge px-6 py-8 text-sm">
+      <div className="mx-auto flex w-full max-w-6xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-faint">
           © {year} IGNISTECH LTD
           <span className="hidden sm:inline">
             {" "}

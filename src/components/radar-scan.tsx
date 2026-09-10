@@ -66,7 +66,7 @@ export function RadarScan({
           className="lr-sweep absolute inset-0 rounded-full"
           style={{
             background:
-              "conic-gradient(from 0deg, rgba(16,185,129,0) 0deg, rgba(16,185,129,0) 300deg, rgba(16,185,129,0.35) 350deg, rgba(16,185,129,0.7) 360deg)",
+              "conic-gradient(from 0deg, rgba(57,217,130,0) 0deg, rgba(57,217,130,0) 300deg, rgba(57,217,130,0.35) 350deg, rgba(57,217,130,0.7) 360deg)",
             maskImage: "radial-gradient(circle, #000 62%, transparent 63%)",
             WebkitMaskImage: "radial-gradient(circle, #000 62%, transparent 63%)",
           }}
@@ -77,7 +77,7 @@ export function RadarScan({
         {BLIPS.slice(0, blips).map((pos, i) => (
           <div
             key={i}
-            className="lr-blip absolute h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-[0_0_10px_2px_rgba(16,185,129,0.6)]"
+            className="lr-blip absolute h-2.5 w-2.5 rounded-full bg-emerald-400 shadow-[0_0_10px_2px_rgba(57,217,130,0.6)]"
             style={{ top: pos.top, left: pos.left }}
           />
         ))}

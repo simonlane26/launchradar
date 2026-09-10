@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Show } from "@clerk/nextjs";
-import RadarBackground from "@/components/radar-background";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { PlaybookSignup } from "@/components/playbook-signup";
@@ -12,12 +11,11 @@ const META_TITLE = "LaunchRadar: A Prioritized Plan to Find Your App's First Use
 // `description`, so the page's visible and machine-readable definitions match.
 const META_DESCRIPTION = BRAND.oneLiner;
 
-// Primary CTA skin — a vibrant accent (the app's radar/emerald) so the main
-// action reads as the main action against the outline + text links beside it.
-// emerald-700 on white clears WCAG AA; hover brightens to emerald-600.
-// Compose with per-placement sizing (`h-* px-* text-*`).
+// Primary CTA skin — signal green (the radar accent) so the main action reads
+// as the main action against the outline + text links beside it. signal-ink
+// text on signal keeps it high-contrast. Compose with sizing (`h-* px-* text-*`).
 const CTA_PRIMARY =
-  "inline-flex items-center justify-center rounded-full bg-emerald-700 font-medium text-white shadow-sm transition-colors hover:bg-emerald-600";
+  "inline-flex items-center justify-center rounded-full bg-signal font-semibold text-signal-ink transition-colors hover:bg-signal-hi";
 
 export const metadata: Metadata = {
   title: { absolute: META_TITLE },
@@ -39,6 +37,27 @@ const STEPS = [
   {
     h: "Step 3: Execute and track results",
     p: "Work the backlog, mark tasks done, and watch your projected score climb. Opportunity Radar surfaces people already asking for what you built; Launch Mode turns the plan into a 30-day campaign.",
+  },
+];
+
+const AUDIENCE = [
+  "Indie and solo founders who can build a product but have never run a marketing plan.",
+  "AI-assisted and no-code builders who shipped fast and skipped the “figure out distribution” step.",
+  "Anyone with a live app stuck near zero users who wants a clear next move, not more theory.",
+];
+
+const WHY = [
+  {
+    h: "It’s specific to your product.",
+    p: "A consumer app, a B2B tool and a developer product get different plans — not the same 50-item checklist.",
+  },
+  {
+    h: "It tells you what to skip.",
+    p: "LaunchRadar calls out the channels that won’t work for you so you don’t waste weeks on them.",
+  },
+  {
+    h: "It’s plain-language and fast.",
+    p: "Every task says what to do, why, and how long it takes. Your first plan is ready in about a minute.",
   },
 ];
 
@@ -69,86 +88,155 @@ const FAQ = [
   },
 ];
 
+/** Static, decorative "scan result" preview for the hero — not real data. */
+function ScanPreview() {
+  const dims = [
+    { name: "Positioning clarity", score: 78, color: "var(--signal)" },
+    { name: "Conversion paths", score: 41, color: "var(--danger)" },
+    { name: "Trust & proof", score: 64, color: "var(--amber)" },
+    { name: "Search & AI visibility", score: 53, color: "var(--amber)" },
+  ];
+  // circumference of r=32 circle ≈ 201; offset for 60% fill
+  const dash = 201;
+  const offset = dash * (1 - 0.6);
+
+  return (
+    <div
+      aria-hidden="true"
+      className="rounded-xl border border-edge bg-surface p-6"
+    >
+      <p className="font-mono text-xs text-faint">dyslexiawrite.com</p>
+      <div className="mt-4 flex items-center gap-4 border-b border-edge pb-5">
+        <div className="relative h-[76px] w-[76px] shrink-0">
+          <svg width="76" height="76" viewBox="0 0 76 76" className="-rotate-90">
+            <circle cx="38" cy="38" r="32" fill="none" stroke="var(--surface-2)" strokeWidth="7" />
+            <circle
+              cx="38"
+              cy="38"
+              r="32"
+              fill="none"
+              stroke="var(--signal)"
+              strokeWidth="7"
+              strokeLinecap="round"
+              strokeDasharray={dash}
+              strokeDashoffset={offset}
+            />
+          </svg>
+          <span className="absolute inset-0 flex items-center justify-center text-xl font-extrabold">
+            60
+          </span>
+        </div>
+        <div>
+          <p className="text-sm font-bold text-signal">Building momentum</p>
+          <p className="mt-0.5 text-xs leading-relaxed text-faint">
+            2 high-impact fixes found, ~4.5 hrs total
+          </p>
+        </div>
+      </div>
+      <ul className="mt-1">
+        {dims.map((d) => (
+          <li key={d.name} className="flex items-center justify-between py-2 text-[13px]">
+            <span className="text-dim">{d.name}</span>
+            <span className="flex items-center gap-2.5">
+              <span className="h-[5px] w-[110px] overflow-hidden rounded-full bg-surface-2">
+                <span
+                  className="block h-full rounded-full"
+                  style={{ width: `${d.score}%`, background: d.color }}
+                />
+              </span>
+              <span className="w-6 text-right font-bold">{d.score}</span>
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export default function Home() {
   return (
-    <div className="relative flex flex-1 flex-col bg-zinc-50 font-sans dark:bg-black">
+    <div className="flex flex-1 flex-col">
       <SiteHeader />
 
       <main className="flex flex-1 flex-col">
-        <section className="relative flex min-h-[66vh] items-center justify-center overflow-hidden px-6 py-16">
-          <RadarBackground offsetX="10%" offsetY="-6%" />
-          <div className="relative z-[1] flex w-full max-w-2xl flex-col items-center gap-6 text-center">
-            <p className="text-sm font-medium tracking-wide text-zinc-500">
-              You vibe coded the app. Now vibe market it.
-            </p>
-            <h1 className="text-3xl font-semibold tracking-tight text-black sm:text-4xl md:text-[2.75rem] md:leading-[1.15] dark:text-zinc-50">
+        {/* Hero */}
+        <section className="mx-auto grid w-full max-w-6xl items-center gap-12 px-6 py-20 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14 lg:py-24">
+          <div>
+            <p className="text-sm text-dim">You vibe coded the app. Now vibe market it.</p>
+            <h1 className="mt-4 text-3xl font-extrabold leading-[1.14] tracking-tight text-ink sm:text-4xl md:text-[2.9rem]">
               LaunchRadar: A Prioritized Plan to Find Your App&apos;s First Users
             </h1>
-            {/* Plain one-sentence definition, directly under the H1 and above the
-                fold. Rendered from BRAND.oneLiner so it stays word-for-word
-                identical to the JSON-LD `description`. */}
-            <p className="max-w-lg text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-              {BRAND.oneLiner}
-            </p>
-            <div className="flex flex-col items-center gap-4 pt-2 sm:flex-row">
+            {/* Plain one-sentence definition, above the fold. Rendered from
+                BRAND.oneLiner so it stays word-for-word identical to the
+                JSON-LD `description`. */}
+            <p className="mt-5 max-w-lg text-base leading-relaxed text-dim">{BRAND.oneLiner}</p>
+            <div className="mt-8 flex flex-wrap items-center gap-5">
               <Show when="signed-out">
-                <Link href="/sign-up" className={`${CTA_PRIMARY} h-12 px-8 text-base`}>
+                <Link href="/sign-up" className={`${CTA_PRIMARY} h-12 px-6 text-sm`}>
                   Get your Growth Score
                 </Link>
               </Show>
               <Show when="signed-in">
-                <Link href="/dashboard" className={`${CTA_PRIMARY} h-12 px-8 text-base`}>
+                <Link href="/dashboard" className={`${CTA_PRIMARY} h-12 px-6 text-sm`}>
                   Go to dashboard
                 </Link>
               </Show>
               <Link
                 href="/pricing"
-                className="text-base font-medium text-zinc-600 transition-colors hover:text-black dark:text-zinc-400 dark:hover:text-zinc-100"
+                className="text-sm text-dim underline decoration-edge-hi underline-offset-4 transition-colors hover:text-ink"
               >
                 See pricing
               </Link>
             </div>
-
-            <PlaybookSignup />
-
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-              <a
-                href="https://www.producthunt.com/products/coded-apps/reviews/new?utm_source=badge-product_review&utm_medium=badge&utm_source=badge-coded-apps"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="https://api.producthunt.com/widgets/embed-image/v1/product_review.svg?product_id=1268546&theme=dark"
-                  alt="coded apps - Launchradar - Turn your vibe-coded app into a growth machine | Product Hunt"
-                  width={250}
-                  height={54}
-                  loading="lazy"
-                />
-              </a>
-              <a
-                href="https://www.producthunt.com/products/coded-apps/launches/coded-apps?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-coded-apps"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1195194&theme=dark&t=1788714618372"
-                  alt="coded apps - Vibecheck — Security scans built for AI-coded apps | Product Hunt"
-                  width={250}
-                  height={54}
-                  loading="lazy"
-                />
-              </a>
+            <div className="mt-8 max-w-md">
+              <PlaybookSignup />
             </div>
           </div>
+
+          <ScanPreview />
         </section>
 
-        <section className="mx-auto w-full max-w-3xl px-6 py-16">
-          <h2 className="text-2xl font-semibold tracking-tight text-black dark:text-zinc-50">
-            What LaunchRadar Does
+        {/* Social proof badges */}
+        <section className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-3 px-6 pb-16">
+          <a
+            href="https://www.producthunt.com/products/coded-apps/reviews/new?utm_source=badge-product_review&utm_medium=badge&utm_source=badge-coded-apps"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="https://api.producthunt.com/widgets/embed-image/v1/product_review.svg?product_id=1268546&theme=dark"
+              alt="coded apps - Launchradar - Turn your vibe-coded app into a growth machine | Product Hunt"
+              width={250}
+              height={54}
+              loading="lazy"
+            />
+          </a>
+          <a
+            href="https://www.producthunt.com/products/coded-apps/launches/coded-apps?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-coded-apps"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1195194&theme=dark&t=1788714618372"
+              alt="coded apps - Vibecheck — Security scans built for AI-coded apps | Product Hunt"
+              width={250}
+              height={54}
+              loading="lazy"
+            />
+          </a>
+        </section>
+
+        {/* What LaunchRadar Does */}
+        <section className="mx-auto w-full max-w-6xl border-t border-edge px-6 py-16">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-faint">
+            What it does
+          </p>
+          <h2 className="max-w-xl text-2xl font-bold tracking-tight text-ink">
+            A prioritized action plan, not a marketing lecture
           </h2>
-          <p className="mt-4 leading-7 text-zinc-600 dark:text-zinc-400">
+          <p className="mt-4 max-w-2xl leading-relaxed text-dim">
             If you just launched and don&apos;t know how to find your first users, LaunchRadar gives
             you a prioritized action plan in minutes. It reads your live product, works out who it&apos;s
             for and where those people are, and hands back a ranked list of growth tasks — highest
@@ -156,97 +244,111 @@ export default function Home() {
           </p>
         </section>
 
-        <section className="mx-auto w-full max-w-3xl px-6 pb-16">
-          <h2 className="text-2xl font-semibold tracking-tight text-black dark:text-zinc-50">
-            Who It&apos;s For
+        {/* Who It's For */}
+        <section className="mx-auto w-full max-w-6xl border-t border-edge px-6 py-16">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-faint">Who it&apos;s for</p>
+          <h2 className="max-w-xl text-2xl font-bold tracking-tight text-ink">
+            Built for people who can ship but haven&apos;t sold anything yet
           </h2>
-          <ul className="mt-4 flex list-disc flex-col gap-2 pl-5 leading-7 text-zinc-600 dark:text-zinc-400">
-            <li>Indie and solo founders who can build a product but have never run a marketing plan.</li>
-            <li>
-              AI-assisted and no-code builders who shipped fast and skipped the &ldquo;figure out
-              distribution&rdquo; step.
-            </li>
-            <li>Anyone with a live app stuck near zero users who wants a clear next move, not more theory.</li>
+          <ul className="mt-8 grid gap-4 sm:grid-cols-3">
+            {AUDIENCE.map((item, i) => (
+              <li key={i} className="rounded-[10px] border border-edge bg-surface p-5">
+                <span className="text-xs font-bold text-signal">0{i + 1}</span>
+                <p className="mt-2.5 text-sm leading-relaxed text-dim">{item}</p>
+              </li>
+            ))}
           </ul>
         </section>
 
-        <section className="mx-auto w-full max-w-3xl px-6 pb-16">
-          <h2 className="text-2xl font-semibold tracking-tight text-black dark:text-zinc-50">
-            How It Works
+        {/* How It Works */}
+        <section className="mx-auto w-full max-w-6xl border-t border-edge px-6 py-16">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-faint">How it works</p>
+          <h2 className="max-w-xl text-2xl font-bold tracking-tight text-ink">
+            From URL to ranked backlog in about a minute
           </h2>
-          <div className="mt-6 flex flex-col gap-6">
-            {STEPS.map((step) => (
-              <div key={step.h}>
-                <h3 className="font-medium text-black dark:text-zinc-100">{step.h}</h3>
-                <p className="mt-1 leading-7 text-zinc-600 dark:text-zinc-400">{step.p}</p>
+          <div className="mt-6 flex flex-col">
+            {STEPS.map((step, i) => (
+              <div
+                key={step.h}
+                className="grid grid-cols-[36px_1fr] gap-5 border-b border-edge py-6 last:border-b-0"
+              >
+                <span className="flex h-9 w-9 items-center justify-center rounded-full border border-signal-dim text-sm font-bold text-signal">
+                  {i + 1}
+                </span>
+                <div>
+                  <h3 className="font-bold text-ink">{step.h}</h3>
+                  <p className="mt-1.5 max-w-2xl leading-relaxed text-dim">{step.p}</p>
+                </div>
               </div>
             ))}
           </div>
         </section>
 
-        <section className="mx-auto w-full max-w-3xl px-6 pb-16">
-          <h2 className="text-2xl font-semibold tracking-tight text-black dark:text-zinc-50">
-            Why Founders Use It
+        {/* Why Founders Use It */}
+        <section className="mx-auto w-full max-w-6xl border-t border-edge px-6 py-16">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-faint">
+            Why founders use it
+          </p>
+          <h2 className="max-w-xl text-2xl font-bold tracking-tight text-ink">
+            Not another 50-item generic checklist
           </h2>
-          <ul className="mt-4 flex list-disc flex-col gap-2 pl-5 leading-7 text-zinc-600 dark:text-zinc-400">
-            <li>
-              <strong className="font-medium text-black dark:text-zinc-100">
-                It&apos;s specific to your product.
-              </strong>{" "}
-              A consumer app, a B2B tool and a developer product get different plans — not the same
-              50-item checklist.
-            </li>
-            <li>
-              <strong className="font-medium text-black dark:text-zinc-100">
-                It tells you what to skip.
-              </strong>{" "}
-              LaunchRadar calls out the channels that won&apos;t work for you so you don&apos;t waste
-              weeks on them.
-            </li>
-            <li>
-              <strong className="font-medium text-black dark:text-zinc-100">
-                It&apos;s plain-language and fast.
-              </strong>{" "}
-              Every task says what to do, why, and how long it takes. Your first plan is ready in
-              about a minute.
-            </li>
-          </ul>
-          <div className="mt-6">
-            <Show when="signed-out">
-              <Link href="/sign-up" className={`${CTA_PRIMARY} h-11 px-6 text-sm`}>
-                Get your plan
-              </Link>
-            </Show>
-            <Show when="signed-in">
-              <Link href="/dashboard" className={`${CTA_PRIMARY} h-11 px-6 text-sm`}>
-                Go to dashboard
-              </Link>
-            </Show>
+          <div className="mt-8 flex max-w-2xl flex-col gap-6">
+            {WHY.map((item) => (
+              <div key={item.h} className="flex gap-3.5">
+                <span className="mt-0.5 shrink-0 font-extrabold text-signal">→</span>
+                <div>
+                  <h3 className="font-bold text-ink">{item.h}</h3>
+                  <p className="mt-1 leading-relaxed text-dim">{item.p}</p>
+                </div>
+              </div>
+            ))}
           </div>
         </section>
 
-        <section className="mx-auto w-full max-w-3xl px-6 pb-24">
-          <h2 className="text-2xl font-semibold tracking-tight text-black dark:text-zinc-50">
-            Frequently asked questions
-          </h2>
-          <div className="mt-6 flex flex-col gap-6">
+        {/* FAQ */}
+        <section className="mx-auto w-full max-w-6xl border-t border-edge px-6 py-16">
+          <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-faint">FAQ</p>
+          <h2 className="text-2xl font-bold tracking-tight text-ink">Frequently asked questions</h2>
+          <div className="mt-6 flex max-w-3xl flex-col gap-6">
             {FAQ.map((item) => (
               <div key={item.q}>
-                <h3 className="font-medium text-black dark:text-zinc-100">{item.q}</h3>
-                <p className="mt-1 leading-7 text-zinc-600 dark:text-zinc-400">{item.a}</p>
+                <h3 className="font-bold text-ink">{item.q}</h3>
+                <p className="mt-1 leading-relaxed text-dim">{item.a}</p>
               </div>
             ))}
           </div>
-          <p className="mt-8 text-sm text-zinc-500">
-            <Link href="/compare" className="font-medium underline hover:text-black dark:hover:text-zinc-100">
+          <p className="mt-8 text-sm text-faint">
+            <Link href="/compare" className="font-medium text-dim underline underline-offset-2 hover:text-ink">
               See how it compares
             </Link>{" "}
             to AI content tools, generic checklists and hiring a growth marketer, or{" "}
-            <Link href="/faq" className="font-medium underline hover:text-black dark:hover:text-zinc-100">
+            <Link href="/faq" className="font-medium text-dim underline underline-offset-2 hover:text-ink">
               read the full FAQ
             </Link>
             .
           </p>
+        </section>
+
+        {/* Bottom CTA */}
+        <section className="mx-auto w-full max-w-6xl px-6 py-16">
+          <div className="rounded-xl border border-signal-dim bg-surface px-8 py-12 text-center">
+            <h2 className="text-2xl font-bold tracking-tight text-ink">Get your Growth Score</h2>
+            <p className="mx-auto mt-2.5 max-w-md text-sm text-dim">
+              Free scan. See your first plan in about a minute.
+            </p>
+            <div className="mt-6 flex justify-center">
+              <Show when="signed-out">
+                <Link href="/sign-up" className={`${CTA_PRIMARY} h-12 px-7 text-sm`}>
+                  Get your Growth Score
+                </Link>
+              </Show>
+              <Show when="signed-in">
+                <Link href="/dashboard" className={`${CTA_PRIMARY} h-12 px-7 text-sm`}>
+                  Go to dashboard
+                </Link>
+              </Show>
+            </div>
+          </div>
         </section>
       </main>
 

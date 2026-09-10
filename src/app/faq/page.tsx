@@ -29,7 +29,7 @@ function paragraphs(answer: string) {
 
 export default function FaqPage() {
   return (
-    <div className="flex flex-1 flex-col bg-zinc-50 font-sans dark:bg-black">
+    <div className="flex flex-1 flex-col">
       <SiteHeader />
 
       <JsonLd
@@ -98,7 +98,7 @@ export default function FaqPage() {
           <div className="mt-4 flex flex-wrap items-center justify-center gap-3">
             <Link
               href="/sign-up"
-              className="inline-flex h-11 items-center justify-center rounded-full bg-foreground px-6 text-sm font-medium text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc]"
+              className="inline-flex h-11 items-center justify-center rounded-full bg-signal px-6 text-sm font-semibold text-signal-ink transition-colors hover:bg-signal-hi"
             >
               Get your Growth Score
             </Link>

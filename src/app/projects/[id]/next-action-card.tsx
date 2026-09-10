@@ -54,7 +54,7 @@ export function NextBestActionCard({
   return (
     <section
       ref={cardRef}
-      className="rounded-2xl border border-zinc-900 bg-white dark:border-zinc-100 dark:bg-zinc-950"
+      className="rounded-2xl border border-signal-dim bg-surface"
       style={{
         padding: collapsed ? "0 1.5rem" : "1.5rem",
         // Unbounded normally (a long drafted asset scrolls inside its <pre>);
@@ -129,7 +129,7 @@ export function NextBestActionCard({
             href={external}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex h-10 items-center justify-center gap-1.5 rounded-full bg-black px-5 text-sm font-medium text-white transition-colors hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+            className="flex h-10 items-center justify-center gap-1.5 rounded-full bg-signal px-5 text-sm font-semibold text-signal-ink transition-colors hover:bg-signal-hi"
           >
             Run the security check <IconExternalLink size={14} />
           </a>
@@ -155,7 +155,7 @@ export function NextBestActionCard({
                 setSteps(result.steps);
               })
             }
-            className="flex h-10 items-center justify-center rounded-full bg-black px-5 text-sm font-medium text-white transition-colors hover:bg-zinc-800 disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+            className="flex h-10 items-center justify-center rounded-full bg-signal px-5 text-sm font-semibold text-signal-ink transition-colors hover:bg-signal-hi disabled:opacity-50"
           >
             {guidePending
               ? action.deliverable === "ASSET"

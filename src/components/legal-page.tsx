@@ -26,7 +26,7 @@ export function LegalPage({
   children: ReactNode;
 }) {
   return (
-    <div className="flex flex-1 flex-col bg-zinc-50 font-sans dark:bg-black">
+    <div className="flex flex-1 flex-col">
       <SiteHeader />
 
       <main className="mx-auto w-full max-w-3xl flex-1 px-6 pb-24 pt-10">

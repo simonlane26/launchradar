@@ -110,7 +110,7 @@ function BacklogCard({
             href={external}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex h-9 items-center justify-center gap-1.5 rounded-full bg-black px-4 text-xs font-medium text-white transition-colors hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+            className="flex h-9 items-center justify-center gap-1.5 rounded-full bg-signal px-4 text-xs font-semibold text-signal-ink transition-colors hover:bg-signal-hi"
           >
             Run the security check <IconExternalLink size={13} />
           </a>
@@ -141,7 +141,7 @@ function BacklogCard({
                 setOpen(true);
               });
             }}
-            className="flex h-9 items-center justify-center rounded-full bg-black px-4 text-xs font-medium text-white transition-colors hover:bg-zinc-800 disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+            className="flex h-9 items-center justify-center rounded-full bg-signal px-4 text-xs font-semibold text-signal-ink transition-colors hover:bg-signal-hi disabled:opacity-50"
           >
             {primaryLabel}
           </button>
@@ -212,6 +212,34 @@ function DoneRow({ action }: { action: DoneAction }) {
   );
 }
 
+type Filter = "all" | "HIGH" | "MEDIUM" | "LOW" | "done";
+
+function Chip({
+  active,
+  onClick,
+  label,
+  count,
+}: {
+  active: boolean;
+  onClick: () => void;
+  label: string;
+  count: number;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+        active
+          ? "border-edge-hi bg-surface-2 text-ink"
+          : "border-edge text-dim hover:text-ink"
+      }`}
+    >
+      {label} <span className="text-faint">{count}</span>
+    </button>
+  );
+}
+
 export function ActionList({
   openCount,
   queued,
@@ -223,35 +251,46 @@ export function ActionList({
   done: DoneAction[];
   aiActionsAtLimit?: boolean;
 }) {
+  const [filter, setFilter] = useState<Filter>("all");
+
   if (openCount === 0 && done.length === 0) return null;
+
+  const byImpact = (i: "HIGH" | "MEDIUM" | "LOW") => queued.filter((a) => a.impact === i);
+  const visible = filter === "all" || filter === "done" ? queued : byImpact(filter);
+  const showDone = filter === "done";
 
   return (
     <section>
       <h2 className="mb-3 text-lg font-medium">Growth Backlog ({openCount})</h2>
 
-      {queued.length > 0 ? (
+      <div className="mb-5 flex flex-wrap gap-2">
+        <Chip active={filter === "all"} onClick={() => setFilter("all")} label="All" count={queued.length} />
+        <Chip active={filter === "HIGH"} onClick={() => setFilter("HIGH")} label="High impact" count={byImpact("HIGH").length} />
+        <Chip active={filter === "MEDIUM"} onClick={() => setFilter("MEDIUM")} label="Medium" count={byImpact("MEDIUM").length} />
+        <Chip active={filter === "LOW"} onClick={() => setFilter("LOW")} label="Low" count={byImpact("LOW").length} />
+        {done.length > 0 && (
+          <Chip active={filter === "done"} onClick={() => setFilter("done")} label="Completed" count={done.length} />
+        )}
+      </div>
+
+      {showDone ? (
+        <ul className="flex flex-col divide-y divide-zinc-900 rounded-xl border border-edge bg-surface px-2">
+          {done.map((a) => (
+            <DoneRow key={a.id} action={a} />
+          ))}
+        </ul>
+      ) : visible.length > 0 ? (
         <ul className="flex flex-col gap-2">
-          {queued.map((a) => (
+          {visible.map((a) => (
             <BacklogCard key={a.id} action={a} aiActionsAtLimit={aiActionsAtLimit} />
           ))}
         </ul>
       ) : (
         <p className="text-sm text-zinc-500">
-          Nothing open — re-analyze from the Overview to refill the backlog.
+          {filter === "all"
+            ? "Nothing open — re-analyze from the Overview to refill the backlog."
+            : "Nothing in the backlog at this impact level."}
         </p>
-      )}
-
-      {done.length > 0 && (
-        <details className="mt-4">
-          <summary className="cursor-pointer text-sm font-medium text-zinc-500">
-            Done &amp; skipped ({done.length})
-          </summary>
-          <ul className="mt-2 flex flex-col divide-y divide-zinc-100 dark:divide-zinc-900">
-            {done.map((a) => (
-              <DoneRow key={a.id} action={a} />
-            ))}
-          </ul>
-        </details>
       )}
     </section>
   );

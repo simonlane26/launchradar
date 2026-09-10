@@ -1,28 +1,125 @@
 @import "tailwindcss";
 
+/* ---------------------------------------------------------------------------
+   LaunchRadar is dark-only. Rather than gate every style behind a theme, the
+   `dark:` variant is redefined to *always* apply (the <html> element carries
+   a permanent `.dark` class), and the neutral ramp the app is written against
+   (`zinc-*`, `bg-foreground`, `emerald-*` …) is re-pointed here onto the
+   radar / signal-green palette. So most components adopt the new look with no
+   per-file change; only structural pieces (hero, nav, buttons) are hand-built.
+   Palette source: the redesign mockups (launchradar-landing / -actions).
+--------------------------------------------------------------------------- */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: dark;
+
+  --bg: #0e1512;
+  --surface: #141c18;
+  --surface-2: #1a2420;
+  --edge: #26312b;
+  --edge-hi: #313e37;
+  --ink: #eaf1ec;
+  --dim: #93a69c;
+  --faint: #5e6f66;
+  --signal: #39d982;
+  --signal-hi: #4ee395;
+  --signal-ink: #08150e;
+  --signal-dim: #1e4a34;
+  --amber: #e8834b;
+  --amber-dim: #4a2e1c;
+  --danger: #e85b5b;
+  --danger-dim: #4a2020;
+  --radius: 10px;
+
+  /* legacy aliases still referenced directly in a handful of inline styles */
+  --background: var(--bg);
+  --foreground: var(--ink);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  --color-background: var(--bg);
+  --color-foreground: var(--ink);
+
+  /* brand + semantic tokens (used by the hand-built pieces) */
+  --color-signal: var(--signal);
+  --color-signal-hi: var(--signal-hi);
+  --color-signal-ink: var(--signal-ink);
+  --color-signal-dim: var(--signal-dim);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-edge: var(--edge);
+  --color-edge-hi: var(--edge-hi);
+  --color-ink: var(--ink);
+  --color-dim: var(--dim);
+  --color-faint: var(--faint);
+
+  /* Re-point the neutral ramp the app already uses onto the dark palette.
+     Values chosen for how each step lands in `dark:` position (which always
+     wins now): 50–300 read as light text, 400–600 as muted text / bright
+     borders, 700–950 as edges and surfaces. */
+  --color-white: #ffffff;
+  --color-black: #0e1512;
+  --color-zinc-50: #eaf1ec;
+  --color-zinc-100: #dbe4de;
+  --color-zinc-200: #2b352f;
+  --color-zinc-300: #c6d1cb;
+  --color-zinc-400: #9aaaa1;
+  --color-zinc-500: #93a69c;
+  --color-zinc-600: #869790;
+  --color-zinc-700: #323f38;
+  --color-zinc-800: #26312b;
+  --color-zinc-900: #1a2420;
+  --color-zinc-950: #141c18;
+
+  /* accent: existing emerald-* usages become signal green */
+  --color-emerald-400: #4ee395;
+  --color-emerald-500: #39d982;
+  --color-emerald-600: #39d982;
+  --color-emerald-700: #2bbf70;
+  --color-emerald-900: #1e4a34;
+  --color-emerald-950: #14301f;
+
+  /* status colours tuned to the palette */
+  --color-amber-400: #f0ac80;
+  --color-amber-500: #e8834b;
+  --color-amber-600: #e8834b;
+  --color-amber-700: #f0ac80;
+  --color-amber-900: #4a2e1c;
+  --color-amber-950: #4a2e1c;
+  --color-red-400: #f0a0a0;
+  --color-red-500: #e85b5b;
+  --color-red-600: #e85b5b;
+  --color-red-700: #f0a0a0;
+  --color-red-900: #4a2020;
+  --color-red-950: #4a2020;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  background: var(--bg);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-inter), Arial, Helvetica, sans-serif;
+}
+
+/* Fixed radar wash — a soft signal glow top-right plus faint concentric
+   sweep lines. Sits behind all content (z-index:-1, over the html canvas),
+   never intercepts pointer events. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 82% 6%, rgba(57, 217, 130, 0.07), transparent 42%),
+    repeating-radial-gradient(circle at 82% 6%, rgba(57, 217, 130, 0.028) 0px, transparent 1px 72px);
 }
 
 /* --- Motion --------------------------------------------------------------- */

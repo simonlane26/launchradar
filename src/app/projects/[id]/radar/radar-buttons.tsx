@@ -33,7 +33,7 @@ export function ScanButton({
       type="button"
       disabled={isPending}
       onClick={() => startTransition(() => runScan(projectId))}
-      className="flex h-11 items-center justify-center gap-2 rounded-full bg-black px-6 text-sm font-medium text-white transition-colors hover:bg-zinc-800 disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+      className="flex h-11 items-center justify-center gap-2 rounded-full bg-signal px-6 text-sm font-semibold text-signal-ink transition-colors hover:bg-signal-hi disabled:opacity-50"
     >
       {isPending ? (
         "Scanning… (a few minutes)"
@@ -122,7 +122,7 @@ export function ProfileEditor({ projectId, profile }: { projectId: string; profi
               setEditing(false);
             })
           }
-          className="flex h-9 items-center justify-center rounded-full bg-black px-4 text-xs font-medium text-white disabled:opacity-50 dark:bg-white dark:text-black"
+          className="flex h-9 items-center justify-center rounded-full bg-signal px-4 text-xs font-semibold text-signal-ink disabled:opacity-50"
         >
           {isPending ? "Saving…" : "Save"}
         </button>
@@ -209,7 +209,7 @@ export function OpportunityActions({ opportunityId }: { opportunityId: string })
               else setReply(result.reply);
             })
           }
-          className="flex h-9 items-center gap-1.5 rounded-full bg-black px-4 text-xs font-medium text-white disabled:opacity-50 dark:bg-white dark:text-black"
+          className="flex h-9 items-center gap-1.5 rounded-full bg-signal px-4 text-xs font-semibold text-signal-ink disabled:opacity-50"
         >
           {replyPending ? (
             "Drafting…"

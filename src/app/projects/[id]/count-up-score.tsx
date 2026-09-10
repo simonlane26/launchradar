@@ -4,9 +4,9 @@ import { useEffect, useState } from "react";
 
 /** red → amber → emerald as the number climbs. */
 function colorFor(score: number): string {
-  if (score < 34) return "#ef4444";
-  if (score < 67) return "#f59e0b";
-  return "#10b981";
+  if (score < 34) return "#e85b5b";
+  if (score < 67) return "#e8834b";
+  return "#39d982";
 }
 
 export function CountUpScore({ value, durationMs = 900 }: { value: number; durationMs?: number }) {

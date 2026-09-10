@@ -16,13 +16,13 @@ export const IMPACT_HEADING: Record<ActionImpact, string> = {
 export const IMPACT_DOT: Record<ActionImpact, string> = {
   HIGH: "bg-red-500",
   MEDIUM: "bg-amber-500",
-  LOW: "bg-zinc-400",
+  LOW: "bg-emerald-900",
 };
 
 export const IMPACT_TEXT: Record<ActionImpact, string> = {
-  HIGH: "text-red-600 dark:text-red-400",
-  MEDIUM: "text-amber-600 dark:text-amber-400",
-  LOW: "text-zinc-500",
+  HIGH: "text-red-400",
+  MEDIUM: "text-amber-400",
+  LOW: "text-emerald-400",
 };
 
 export const IMPACT_RANK: Record<ActionImpact, number> = {

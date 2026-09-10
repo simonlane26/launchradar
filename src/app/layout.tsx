@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, Geist_Mono } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { GoogleTagManager } from "@next/third-parties/google";
 import { JsonLd } from "@/components/json-ld";
 import { BRAND, SITE_URL, organizationJsonLd, softwareApplicationJsonLd } from "@/lib/seo";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
 });
 
@@ -55,10 +55,29 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: ReactNode }>) {
   return (
-    <ClerkProvider afterSignOutUrl="/">
+    <ClerkProvider
+      afterSignOutUrl="/"
+      appearance={{
+        variables: {
+          colorPrimary: "#39d982",
+          colorPrimaryForeground: "#08150e",
+          colorBackground: "#141c18",
+          colorForeground: "#eaf1ec",
+          colorMutedForeground: "#93a69c",
+          colorInput: "#0e1512",
+          colorInputForeground: "#eaf1ec",
+          colorNeutral: "#eaf1ec",
+          colorBorder: "#26312b",
+          colorDanger: "#e85b5b",
+          colorSuccess: "#39d982",
+          borderRadius: "0.6rem",
+          fontFamily: "var(--font-inter), system-ui, sans-serif",
+        },
+      }}
+    >
       <html
         lang="en"
-        className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+        className={`dark ${inter.variable} ${geistMono.variable} h-full antialiased`}
       >
         {GTM_ID ? <GoogleTagManager gtmId={GTM_ID} /> : null}
         <body className="min-h-full flex flex-col">

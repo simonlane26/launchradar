@@ -63,7 +63,7 @@ function NavGroup({
     <div className="relative flex gap-1 md:flex-col">
       {indicator && (
         <div
-          className="absolute left-0 hidden w-full rounded-lg bg-zinc-100 md:block dark:bg-zinc-800"
+          className="absolute left-0 hidden w-full rounded-lg bg-surface-2 md:block"
           style={{
             height: indicator.height,
             transform: `translateY(${indicator.top}px)`,
@@ -82,8 +82,8 @@ function NavGroup({
             href={item.href}
             className={`relative z-10 flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
               active
-                ? "bg-zinc-100 text-black dark:bg-zinc-800 dark:text-zinc-50 md:bg-transparent md:dark:bg-transparent"
-                : "text-zinc-600 hover:bg-zinc-100 hover:text-black dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-100"
+                ? "bg-surface-2 text-ink md:bg-transparent [&_svg]:text-signal"
+                : "text-dim hover:bg-surface-2 hover:text-ink"
             }`}
           >
             {item.icon && <item.icon size={16} stroke={1.75} />}
@@ -119,15 +119,15 @@ export function ProjectNav({
   ];
 
   return (
-    <nav className="flex shrink-0 gap-1 overflow-x-auto border-b border-zinc-200 px-4 py-3 md:h-screen md:w-56 md:flex-col md:overflow-y-auto md:border-b-0 md:border-r md:px-3 md:py-6 dark:border-zinc-800">
+    <nav className="flex shrink-0 gap-1 overflow-x-auto border-b border-edge bg-surface px-4 py-3 md:h-screen md:w-56 md:flex-col md:overflow-y-auto md:border-b-0 md:border-r md:px-3 md:py-6">
       <div className="hidden md:block">
         <Link
           href="/dashboard"
-          className="px-3 text-sm font-medium uppercase tracking-widest text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
+          className="px-3 text-sm font-extrabold tracking-wide text-ink transition-colors hover:text-dim"
         >
-          LaunchRadar
+          LAUNCH<span className="text-signal">RADAR</span>
         </Link>
-        <p className="mt-1 truncate px-3 text-sm font-semibold text-black dark:text-zinc-50">
+        <p className="mt-1 truncate px-3 text-sm font-semibold text-dim">
           {projectName}
         </p>
       </div>

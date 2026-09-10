@@ -40,7 +40,7 @@ export function AnalyzeForm({ atCap = false }: { atCap?: boolean }) {
       </div>
       <button
         type="submit"
-        className="flex h-12 items-center justify-center rounded-full bg-foreground px-8 text-base font-medium text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc]"
+        className="flex h-12 items-center justify-center rounded-full bg-signal px-8 text-base font-semibold text-signal-ink transition-colors hover:bg-signal-hi"
       >
         Get your Growth Score
       </button>

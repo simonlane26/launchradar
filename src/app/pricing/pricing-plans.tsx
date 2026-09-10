@@ -115,9 +115,9 @@ function priceCell(tier: Tier, billing: Billing): string {
 
 const btnBase =
   "mt-6 flex h-11 items-center justify-center rounded-full px-5 text-sm font-medium transition-colors";
-const btnPrimary = "bg-foreground text-background hover:bg-[#383838] dark:hover:bg-[#ccc]";
+const btnPrimary = "bg-signal text-signal-ink hover:bg-signal-hi";
 const btnOutline =
-  "border border-zinc-300 hover:border-zinc-500 dark:border-zinc-700 dark:hover:border-zinc-500";
+  "border border-edge hover:border-edge-hi text-ink";
 
 export function PricingPlans({
   currentTier,
@@ -145,7 +145,7 @@ export function PricingPlans({
             onClick={() => setBilling("monthly")}
             className={`rounded-full px-4 py-1.5 transition-colors ${
               billing === "monthly"
-                ? "bg-foreground text-background"
+                ? "bg-signal text-signal-ink"
                 : "text-zinc-600 hover:text-black dark:text-zinc-400 dark:hover:text-zinc-100"
             }`}
           >
@@ -157,7 +157,7 @@ export function PricingPlans({
             onClick={() => setBilling("annual")}
             className={`flex items-center gap-1.5 rounded-full px-4 py-1.5 transition-colors ${
               billing === "annual"
-                ? "bg-foreground text-background"
+                ? "bg-signal text-signal-ink"
                 : "text-zinc-600 hover:text-black dark:text-zinc-400 dark:hover:text-zinc-100"
             }`}
           >
@@ -165,7 +165,7 @@ export function PricingPlans({
             <span
               className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${
                 billing === "annual"
-                  ? "bg-background/20 text-background"
+                  ? "bg-signal-ink/20 text-signal-ink"
                   : "bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400"
               }`}
             >
@@ -183,14 +183,14 @@ export function PricingPlans({
               key={tier.id}
               className={`flex flex-col rounded-2xl border bg-white p-6 dark:bg-zinc-950 ${
                 tier.highlight
-                  ? "border-zinc-900 dark:border-zinc-100"
+                  ? "border-signal"
                   : "border-zinc-200 dark:border-zinc-800"
               }`}
             >
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold">{tier.name}</h2>
                 {tier.highlight && (
-                  <span className="rounded-full bg-zinc-900 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white dark:bg-zinc-100 dark:text-black">
+                  <span className="rounded-full bg-signal px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-signal-ink">
                     Most popular
                   </span>
                 )}

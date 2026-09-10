@@ -158,7 +158,7 @@ export default async function ProjectPage({
             </div>
             <Link
               href={`/projects/${project.id}/launch`}
-              className="flex h-11 items-center justify-center gap-2 rounded-full bg-black px-6 text-sm font-medium text-white transition-colors hover:bg-zinc-800 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+              className="flex h-11 items-center justify-center gap-2 rounded-full bg-signal px-6 text-sm font-semibold text-signal-ink transition-colors hover:bg-signal-hi"
             >
               <IconRocket size={16} />
               Launch Mode

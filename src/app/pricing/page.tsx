@@ -25,7 +25,7 @@ export default async function PricingPage() {
   }
 
   return (
-    <div className="flex flex-1 flex-col bg-zinc-50 font-sans dark:bg-black">
+    <div className="flex flex-1 flex-col">
       <SiteHeader />
 
       <main className="mx-auto w-full max-w-4xl flex-1 px-6 pb-24 pt-10">
@@ -52,7 +52,7 @@ export default async function PricingPage() {
           </p>
           <Link
             href="/sign-up"
-            className="mt-4 inline-flex h-11 items-center justify-center rounded-full bg-foreground px-6 text-sm font-medium text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc]"
+            className="mt-4 inline-flex h-11 items-center justify-center rounded-full bg-signal px-6 text-sm font-semibold text-signal-ink transition-colors hover:bg-signal-hi"
           >
             Get your Growth Score
           </Link>
