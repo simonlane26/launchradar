@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Show } from "@clerk/nextjs";
+import { IconChevronDown } from "@tabler/icons-react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { PlaybookSignup } from "@/components/playbook-signup";
@@ -188,9 +189,11 @@ export default function Home() {
                 See pricing
               </Link>
             </div>
-            <div className="mt-8 max-w-md">
-              <PlaybookSignup />
-            </div>
+            {/* Reassurance line right under the CTA — the free tier is the
+                strongest anxiety-reducer, so lead with it rather than a price. */}
+            <p className="mt-3 text-xs text-faint">
+              Free plan, no card required · paid plans from £12/mo
+            </p>
           </div>
 
           <ScanPreview />
@@ -309,12 +312,19 @@ export default function Home() {
         <section className="mx-auto w-full max-w-6xl border-t border-edge px-6 py-16">
           <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-faint">FAQ</p>
           <h2 className="text-2xl font-bold tracking-tight text-ink">Frequently asked questions</h2>
-          <div className="mt-6 flex max-w-3xl flex-col gap-6">
+          <div className="mt-6 max-w-3xl">
             {FAQ.map((item) => (
-              <div key={item.q}>
-                <h3 className="font-bold text-ink">{item.q}</h3>
-                <p className="mt-1 leading-relaxed text-dim">{item.a}</p>
-              </div>
+              <details key={item.q} className="group border-b border-edge py-4 first:pt-0 last:border-b-0">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-ink marker:content-none [&::-webkit-details-marker]:hidden">
+                  <h3 className="font-bold">{item.q}</h3>
+                  <IconChevronDown
+                    size={18}
+                    stroke={2}
+                    className="shrink-0 text-faint transition-transform duration-200 group-open:rotate-180 group-open:text-signal"
+                  />
+                </summary>
+                <p className="mt-3 pr-8 leading-relaxed text-dim">{item.a}</p>
+              </details>
             ))}
           </div>
           <p className="mt-8 text-sm text-faint">
@@ -348,7 +358,17 @@ export default function Home() {
                 </Link>
               </Show>
             </div>
+            <p className="mt-3 text-xs text-faint">
+              Free plan, no card required · paid plans from £12/mo
+            </p>
           </div>
+        </section>
+
+        {/* Low-key alternative for visitors not ready to run a score — kept
+            below the primary CTA path rather than competing with it in the
+            hero. */}
+        <section className="mx-auto flex w-full max-w-6xl justify-center border-t border-edge px-6 py-16">
+          <PlaybookSignup />
         </section>
       </main>
 
