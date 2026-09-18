@@ -5,13 +5,19 @@ import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { requireOrganisation } from "@/lib/org";
 import { stripeEnabled } from "@/lib/stripe";
+import { absoluteUrl } from "@/lib/seo";
 import { PricingPlans } from "./pricing-plans";
+
+const TITLE = "Pricing · LaunchRadar";
+const DESCRIPTION =
+  "Start free. Move up to Builder or Growth once Opportunity Radar is paying for itself. £0 / £12 / £24 a month, or save ~20% on annual.";
 
 export const metadata: Metadata = {
   title: "Pricing",
-  description:
-    "Start free. Move up to Builder or Growth once Opportunity Radar is paying for itself. £0 / £12 / £24 a month, or save ~20% on annual.",
+  description: DESCRIPTION,
   alternates: { canonical: "/pricing" },
+  openGraph: { title: TITLE, description: DESCRIPTION, url: absoluteUrl("/pricing"), type: "website" },
+  twitter: { card: "summary", title: TITLE, description: DESCRIPTION },
 };
 
 export default async function PricingPage() {
