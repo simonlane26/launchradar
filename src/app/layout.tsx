@@ -37,6 +37,7 @@ export const metadata: Metadata = {
     "You vibe coded the app. LaunchRadar tells you who needs it, where they are, and what to do this week to get your first customers.",
   applicationName: BRAND.name,
   alternates: { canonical: "/" },
+  verification: { other: { "msvalidate.01": "3E6B275E0CFC1CAB9E1AE2A51158AF4A" } },
   openGraph: {
     type: "website",
     siteName: BRAND.name,
