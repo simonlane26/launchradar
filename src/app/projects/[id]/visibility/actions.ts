@@ -60,7 +60,7 @@ export async function addVisibilityFindingsToBacklog(reportId: string) {
 export async function generateDimensionActions(
   projectId: string,
   dimensionKey: DimensionKey,
-): Promise<{ error?: string }> {
+): Promise<{ error?: string; upgrade?: boolean }> {
   const organisation = await requireOrganisation();
 
   const project = await prisma.project.findFirst({
@@ -74,7 +74,7 @@ export async function generateDimensionActions(
   try {
     await assertQuota(organisation, "AI_ACTION");
   } catch (error) {
-    if (error instanceof PlanLimitError) return { error: error.message };
+    if (error instanceof PlanLimitError) return { error: error.message, upgrade: true };
     throw error;
   }
 
@@ -104,25 +104,27 @@ export async function generateDimensionActions(
   const startRank = existing.reduce((max, a) => Math.max(max, a.rank), 0) + 1;
   const fresh = generated.filter((a) => !blockTitles.some((t) => similarTitle(t, a.title)));
 
-  if (fresh.length > 0) {
-    await prisma.action.createMany({
-      data: fresh.map((a, i) => ({
-        projectId,
-        organisationId: organisation.id,
-        analysisId: report.analysisId,
-        source: "VISIBILITY" as const,
-        title: a.title,
-        detail: a.rationale,
-        rationale: a.rationale,
-        category: a.category,
-        impact: a.impact,
-        deliverable: a.deliverable,
-        effortMinutes: a.effortMinutes,
-        rank: startRank + i,
-        visibilityDimension: dimensionKey,
-      })),
-    });
+  if (fresh.length === 0) {
+    return { error: "That looks like it's already covered by an action in your backlog." };
   }
+
+  await prisma.action.createMany({
+    data: fresh.map((a, i) => ({
+      projectId,
+      organisationId: organisation.id,
+      analysisId: report.analysisId,
+      source: "VISIBILITY" as const,
+      title: a.title,
+      detail: a.rationale,
+      rationale: a.rationale,
+      category: a.category,
+      impact: a.impact,
+      deliverable: a.deliverable,
+      effortMinutes: a.effortMinutes,
+      rank: startRank + i,
+      visibilityDimension: dimensionKey,
+    })),
+  });
 
   await recordUsage(organisation.id, "AI_ACTION");
   revalidatePath(`/projects/${projectId}/visibility`);

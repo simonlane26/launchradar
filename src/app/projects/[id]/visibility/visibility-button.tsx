@@ -46,7 +46,7 @@ export function GenerateDimensionButton({
   dimensionKey: DimensionKey;
 }) {
   const [isPending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<{ error?: string; upgrade?: boolean } | null>(null);
   return (
     <span className="flex flex-col gap-1">
       <button
@@ -54,20 +54,21 @@ export function GenerateDimensionButton({
         disabled={isPending}
         onClick={() =>
           startTransition(async () => {
-            const result = await generateDimensionActions(projectId, dimensionKey);
-            setError(result.error ?? null);
+            setResult(await generateDimensionActions(projectId, dimensionKey));
           })
         }
         className="text-left text-sm font-medium text-zinc-500 hover:text-zinc-800 disabled:opacity-50 dark:hover:text-zinc-200"
       >
         {isPending ? "Generating…" : "No actions yet — generate some →"}
       </button>
-      {error && (
+      {result?.error && (
         <span className="text-xs text-zinc-500 dark:text-zinc-400">
-          {error}{" "}
-          <a href="/pricing" className="font-medium underline">
-            See plans
-          </a>
+          {result.error}{" "}
+          {result.upgrade && (
+            <a href="/pricing" className="font-medium underline">
+              See plans
+            </a>
+          )}
         </span>
       )}
     </span>
