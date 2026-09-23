@@ -1,5 +1,7 @@
 # LaunchRadar
 
+[![Vibechecked](https://www.vibecheck.it.com/api/badge/cmue3kg2r00034nwyli6hkd7m)](https://www.vibecheck.it.com/verified/cmue3kg2r00034nwyli6hkd7m)
+
 > You vibe coded the app. Now vibe market it.
 
 An AI growth agent for vibe-coded apps — give it a URL, get a Growth Score,
