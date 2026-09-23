@@ -8,12 +8,13 @@
 
 import { assertHostReachable } from "@/lib/url";
 import { SafeError } from "@/lib/errors";
+import { SITE_URL } from "@/lib/seo";
 
 const FETCH_TIMEOUT_MS = 10_000;
 const MAX_HTML_CHARS = 200_000; // guard against pathological pages
 const MAX_RESPONSE_BYTES = 5_000_000; // hard read cap — servers can omit Content-Length
 const MAX_REDIRECTS = 5;
-const USER_AGENT = "LaunchRadarBot/0.1 (+https://launchradar.app)";
+const USER_AGENT = `LaunchRadarBot/0.1 (+${SITE_URL})`;
 
 /**
  * Read a response body up to `maxBytes`, then stop — a server can stream
