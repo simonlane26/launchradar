@@ -238,7 +238,9 @@ export default function Home() {
             <img
               src="https://www.vibecheck.it.com/vibechecked-badge-large.png"
               alt="Vibechecked — Security scanned, source verified"
+              width={250}
               height={54}
+              style={{ objectFit: 'contain' }}
               loading="lazy"
             />
           </a>
