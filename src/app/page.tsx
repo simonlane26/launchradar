@@ -236,9 +236,9 @@ export default function Home() {
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="https://www.vibecheck.it.com/api/badge/cmue3kg2r00034nwyli6hkd7m"
+              src="https://www.vibecheck.it.com/vibechecked-badge-large.png"
               alt="Vibechecked — Security scanned, source verified"
-              width={164}
+              height={54}
               loading="lazy"
             />
           </a>
