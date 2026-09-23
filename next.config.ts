@@ -78,7 +78,7 @@ const csp = [
   `form-action 'self' ${clerkScript}`,
   `script-src 'self' 'unsafe-inline' ${isDev ? "'unsafe-eval'" : ""} ${clerkScript} ${gtmScript} ${metaPixelScript} https://challenges.cloudflare.com`,
   "style-src 'self' 'unsafe-inline'",
-  `img-src 'self' data: blob: https://img.clerk.com https://api.producthunt.com ${gtmImg} ${metaPixelImg}`,
+  `img-src 'self' data: blob: https://img.clerk.com https://api.producthunt.com https://www.vibecheck.it.com ${gtmImg} ${metaPixelImg}`,
   "font-src 'self' data:",
   "worker-src 'self' blob:",
   `frame-src 'self' https://challenges.cloudflare.com ${clerkScript} ${gtmScript}`,

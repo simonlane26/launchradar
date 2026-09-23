@@ -229,6 +229,19 @@ export default function Home() {
               loading="lazy"
             />
           </a>
+          <a
+            href="https://www.vibecheck.it.com/verified/cmue3kg2r00034nwyli6hkd7m"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="https://www.vibecheck.it.com/api/badge/cmue3kg2r00034nwyli6hkd7m"
+              alt="Vibechecked — Security scanned, source verified"
+              width={164}
+              loading="lazy"
+            />
+          </a>
         </section>
 
         {/* What LaunchRadar Does */}
