@@ -244,6 +244,15 @@ export default function Home() {
               loading="lazy"
             />
           </a>
+          <a href="https://sellwithboost.com" target="_blank" rel="noopener noreferrer">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="https://sellwithboost.com/badge/listing-dark.svg"
+              alt="Listed on Sell With Boost"
+              style={{ height: 40, width: "auto" }}
+              loading="lazy"
+            />
+          </a>
         </section>
 
         {/* What LaunchRadar Does */}
