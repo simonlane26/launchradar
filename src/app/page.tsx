@@ -253,6 +253,19 @@ export default function Home() {
               loading="lazy"
             />
           </a>
+          <a
+            href="https://ailaun.ch/projects/launchradar?utm_source=badge"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="https://ailaun.ch/ailaunch/images/badges/featured-on-dark.svg"
+              alt="Featured on AI Launch"
+              style={{ height: 44, width: "auto" }}
+              loading="lazy"
+            />
+          </a>
         </section>
 
         {/* What LaunchRadar Does */}
