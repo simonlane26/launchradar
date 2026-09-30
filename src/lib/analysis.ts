@@ -9,7 +9,7 @@ import type { ReadinessCheck } from "@/lib/website";
 import { computeScoreBreakdown, overallFromBreakdown } from "@/lib/score";
 import { similarTitle } from "@/lib/action-dedup";
 import { PLAN_LIMITS } from "@/lib/plan";
-import { toUserMessage } from "@/lib/errors";
+import { SafeError, toUserMessage } from "@/lib/errors";
 import { SITE_URL } from "@/lib/seo";
 import { sendAnalysisCompleteEmail } from "@/lib/email";
 
@@ -373,6 +373,14 @@ export async function runAnalysis(
 
     const extraction = response.parsed_output;
     if (!extraction) {
+      if (response.stop_reason === "refusal") {
+        // Deterministic for this content — "try again" would be misleading,
+        // since a refusal won't resolve on retry the way a transient error
+        // (rate limit, network blip) would.
+        throw new SafeError(
+          "Claude declined to analyze this site's content. This can happen on pages with dense security/vulnerability language and isn't something retrying will fix — contact support if this persists.",
+        );
+      }
       throw new Error(
         `Claude did not return a parseable extraction (stop_reason: ${response.stop_reason ?? "unknown"}).`,
       );
