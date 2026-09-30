@@ -373,7 +373,9 @@ export async function runAnalysis(
 
     const extraction = response.parsed_output;
     if (!extraction) {
-      throw new Error("Claude did not return a parseable extraction.");
+      throw new Error(
+        `Claude did not return a parseable extraction (stop_reason: ${response.stop_reason ?? "unknown"}).`,
+      );
     }
     // `competitors` has no Zod `.max()` (see the schema comment) — cap it
     // here instead, before it's stored in rawExtraction or read by

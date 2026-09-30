@@ -17,9 +17,24 @@ export class SafeError extends Error {
   }
 }
 
+function describeNonError(error: unknown): string {
+  // Many SDKs (Resend included) reject with a plain error-shaped object,
+  // not an `Error` instance — `String(obj)` on those just gives
+  // "[object Object]" and loses every detail. Try JSON first.
+  try {
+    const json = JSON.stringify(error);
+    if (json && json !== "{}") return json;
+  } catch {
+    // circular or non-serializable — fall through
+  }
+  return String(error);
+}
+
 export function logError(context: string, error: unknown): void {
   const detail =
-    error instanceof Error ? error.stack ?? `${error.name}: ${error.message}` : String(error);
+    error instanceof Error
+      ? error.stack ?? `${error.name}: ${error.message}`
+      : describeNonError(error);
   // Single structured line per failure — full detail stays on the server.
   console.error(`[${context}] ${detail}`);
 }

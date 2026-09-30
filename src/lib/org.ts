@@ -21,19 +21,23 @@ function adminUserIds(): Set<string> {
  * Backfill `Organisation.email` / `.firstName` from Clerk and fire the
  * one-time welcome email. Runs after the response (`after()`), only when
  * something is actually missing, so the common request pays nothing.
+ *
+ * `email`/`firstName` are resolved by the caller *before* scheduling this
+ * with `after()` — Clerk's `currentUser()` reads request headers under the
+ * hood, and Next.js doesn't support touching headers from inside an
+ * `after()` callback (the request scope is gone by the time it runs).
  */
-async function syncOrgContact(orgId: string): Promise<void> {
+async function syncOrgContact(
+  orgId: string,
+  email: string,
+  firstName: string | null,
+): Promise<void> {
   try {
     const org = await prisma.organisation.findUnique({
       where: { id: orgId },
       select: { email: true, firstName: true, welcomeSentAt: true },
     });
     if (!org) return;
-
-    const user = await currentUser();
-    const email = user?.primaryEmailAddress?.emailAddress ?? null;
-    const firstName = user?.firstName ?? null;
-    if (!email) return;
 
     const data: { email?: string; firstName?: string } = {};
     if (org.email !== email) data.email = email;
@@ -81,10 +85,15 @@ export async function requireOrganisation() {
   });
 
   if (!organisation.email || !organisation.welcomeSentAt) {
-    try {
-      after(() => syncOrgContact(organisation.id));
-    } catch {
-      // `after` is unavailable outside a request scope — skip silently.
+    const user = await currentUser();
+    const email = user?.primaryEmailAddress?.emailAddress ?? null;
+    const firstName = user?.firstName ?? null;
+    if (email) {
+      try {
+        after(() => syncOrgContact(organisation.id, email, firstName));
+      } catch {
+        // `after` is unavailable outside a request scope — skip silently.
+      }
     }
   }
 
