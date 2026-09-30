@@ -1,7 +1,6 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { Resend } from "resend";
 import { SITE_URL } from "@/lib/seo";
-import { domainOf } from "@/lib/url";
 import { logError } from "@/lib/errors";
 
 /**
@@ -18,9 +17,11 @@ import { logError } from "@/lib/errors";
 export const emailEnabled = Boolean(process.env.RESEND_API_KEY);
 const resend = emailEnabled ? new Resend(process.env.RESEND_API_KEY as string) : null;
 
-/** e.g. `LaunchRadar <hello@launchradar.tech>` — must be a verified domain
- *  in Resend (Domains → Add Domain), or every send 403s. */
-const FROM = process.env.RESEND_FROM ?? `LaunchRadar <hello@${domainOf(SITE_URL) ?? "launchradar.tech"}>`;
+/** `mail.launchradar.tech` is the domain verified in Resend (Domains →
+ *  launchradar.tech sends from the app itself; a verified subdomain keeps
+ *  transactional-email sender reputation separate) — must match RESEND_FROM
+ *  on Railway, or every send 403s. */
+const FROM = process.env.RESEND_FROM ?? "LaunchRadar <hello@mail.launchradar.tech>";
 
 const UNSUB_SECRET = process.env.CLERK_SECRET_KEY ?? "launchradar-email-dev";
 
