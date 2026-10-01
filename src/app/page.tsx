@@ -266,6 +266,15 @@ export default function Home() {
               loading="lazy"
             />
           </a>
+          <a href="https://www.uneed.best/tool/launchradar" target="_blank" rel="noopener noreferrer">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="https://www.uneed.best/EMBED3B.png"
+              alt="Launching Soon on Uneed"
+              style={{ height: 44, width: "auto" }}
+              loading="lazy"
+            />
+          </a>
         </section>
 
         {/* What LaunchRadar Does */}
