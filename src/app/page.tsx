@@ -275,6 +275,19 @@ export default function Home() {
               loading="lazy"
             />
           </a>
+          <a
+            href="https://smollist.com/projects/launchradar?utm_source=badge"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="https://smollist.com/smollist/images/badges/featured-on-dark.svg"
+              alt="Featured on Smol List"
+              style={{ height: 44, width: "auto" }}
+              loading="lazy"
+            />
+          </a>
         </section>
 
         {/* What LaunchRadar Does */}
