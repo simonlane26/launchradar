@@ -93,9 +93,17 @@ export function GenerateDimensionButton({
 export function GscConnectButton({ projectId, gated }: { projectId: string; gated: boolean }) {
   const { openUserProfile } = useClerk();
   const [isPending, startTransition] = useTransition();
-  const [result, setResult] = useState<{ error?: string } | null>(null);
+  const [result, setResult] = useState<{ error?: string; siteUrl?: string } | null>(null);
 
   const needsGoogleConnect = result?.error?.startsWith("Connect Google");
+
+  if (result?.siteUrl) {
+    return (
+      <p className="text-xs text-emerald-600 dark:text-emerald-400">
+        Connected to {result.siteUrl} — real data will show up on the next scan.
+      </p>
+    );
+  }
 
   return (
     <span className="flex flex-col items-start gap-1">

@@ -146,7 +146,9 @@ export async function generateDimensionActions(
  * the project's domain and stores it. No token is stored here or anywhere
  * in this app; `src/lib/gsc.ts` fetches a fresh one from Clerk per request.
  */
-export async function connectSearchConsole(projectId: string): Promise<{ error?: string }> {
+export async function connectSearchConsole(
+  projectId: string,
+): Promise<{ error?: string; siteUrl?: string }> {
   const organisation = await requireOrganisation();
   if (!limitsForOrg(organisation).gscIntegration) {
     return { error: "Search Console isn't included on your current plan." };
@@ -186,5 +188,5 @@ export async function connectSearchConsole(projectId: string): Promise<{ error?:
   });
 
   revalidatePath(`/projects/${projectId}/visibility`);
-  return {};
+  return { siteUrl };
 }
