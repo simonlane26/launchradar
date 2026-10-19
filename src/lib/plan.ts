@@ -20,6 +20,9 @@ export type PlanLimits = {
   visibilityAiTest: boolean;
   /** Free doesn't get the competitor-dissatisfaction treatment. */
   competitorRadar: boolean;
+  /** Free doesn't get real Google Search Console data grounding the
+   *  Visibility report — the on-site/inferred checks only. */
+  gscIntegration: boolean;
 };
 
 export const PLAN_LIMITS: Record<Tier, PlanLimits> = {
@@ -32,6 +35,7 @@ export const PLAN_LIMITS: Record<Tier, PlanLimits> = {
     backlogSize: 3,
     visibilityAiTest: false,
     competitorRadar: false,
+    gscIntegration: false,
   },
   BUILDER: {
     projects: 3,
@@ -42,6 +46,7 @@ export const PLAN_LIMITS: Record<Tier, PlanLimits> = {
     backlogSize: 6,
     visibilityAiTest: true,
     competitorRadar: true,
+    gscIntegration: true,
   },
   GROWTH: {
     projects: 10,
@@ -52,6 +57,7 @@ export const PLAN_LIMITS: Record<Tier, PlanLimits> = {
     backlogSize: 6,
     visibilityAiTest: true,
     competitorRadar: true,
+    gscIntegration: true,
   },
 };
 
@@ -77,6 +83,7 @@ const ADMIN_LIMITS: PlanLimits = {
   backlogSize: 6,
   visibilityAiTest: true,
   competitorRadar: true,
+  gscIntegration: true,
 };
 
 /** Minimal shape the plan helpers need — the Prisma `Organisation` row

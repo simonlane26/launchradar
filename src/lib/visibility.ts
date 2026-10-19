@@ -10,6 +10,7 @@ import { similarTitle } from "@/lib/action-dedup";
 import { domainOf } from "@/lib/url";
 import { PLAN_LIMITS, type PlanLimits } from "@/lib/plan";
 import { SafeError, toUserMessage } from "@/lib/errors";
+import { getAccessToken, fetchPerformance, type GscPerformance } from "@/lib/gsc";
 
 /**
  * Phase 3a — "How easy are you to find?" Deterministic on-site AEO/GEO
@@ -190,6 +191,35 @@ function buildOnSiteChecks(
       label: "Meta description",
       status: r("meta_description"),
       detail: "The snippet under your search result.",
+    },
+  ];
+}
+
+/**
+ * Real Google Search Console numbers, folded into the same `OnSiteCheck[]`
+ * shape so `dimensionsPrompt` renders them as ground-truth lines alongside
+ * the inferred checks above — no prompt-building changes needed, real data
+ * just outranks inference in the same list.
+ */
+function gscOnSiteChecks(perf: GscPerformance): OnSiteCheck[] {
+  return [
+    {
+      key: "gsc_position",
+      label: "Average Google ranking position (last 28 days, real data)",
+      status: perf.avgPosition > 0 && perf.avgPosition <= 20 ? "pass" : "fail",
+      detail:
+        perf.totalImpressions > 0
+          ? `Position ${perf.avgPosition} average, ${perf.totalClicks} clicks / ${perf.totalImpressions} impressions.`
+          : "No measurable impressions in the last 28 days.",
+    },
+    {
+      key: "gsc_striking_distance",
+      label: "Page-2 queries close to a quick win (real data)",
+      status: perf.strikingDistanceQueries.length > 0 ? "fail" : "pass",
+      detail:
+        perf.strikingDistanceQueries.length > 0
+          ? `${perf.strikingDistanceQueries.length} queries ranking 11-20, e.g. "${perf.strikingDistanceQueries[0].query}" at position ${perf.strikingDistanceQueries[0].position}.`
+          : "No queries currently sitting just outside page 1.",
     },
   ];
 }
@@ -404,11 +434,21 @@ const DimensionActionsSchema = z.object({
 
 export type DimensionAction = z.infer<typeof DimensionActionSchema>;
 
-function dimensionActionPrompt(ctx: string, dimension: VisibilityDimension): string {
+function dimensionActionPrompt(
+  ctx: string,
+  dimension: VisibilityDimension,
+  gsc: GscPerformance | null,
+): string {
+  const gscBlock =
+    dimension.key === "google_search" && gsc
+      ? `\n\nREAL SEARCH CONSOLE DATA (last 28 days) — prefer the single most impactful fix from these over a generic one:
+${gsc.strikingDistanceQueries.map((q) => `- "${q.query}" ranks ${q.position}, ${q.impressions} impressions, ${q.clicks} clicks`).join("\n") || "(no page-2 queries)"}
+${gsc.lowCtrPages.map((p) => `- ${p.page}: ${p.impressions} impressions, ${p.ctr}% CTR, position ${p.position}`).join("\n") || "(no low-CTR pages)"}`
+      : "";
   return `${ctx}
 
 DIMENSION: ${dimension.label} (${dimension.acronym}) — currently ${dimension.score}/100
-DIAGNOSIS: ${dimension.detail}
+DIAGNOSIS: ${dimension.detail}${gscBlock}
 
 Turn this diagnosis into a concrete backlog action the founder can pick up and finish (a second only if the diagnosis clearly names two separate, independently-doable fixes). Ground the title and rationale in the diagnosis text above — specific to this product, not generic advice.`;
 }
@@ -417,18 +457,22 @@ Turn this diagnosis into a concrete backlog action the founder can pick up and f
  * "No actions yet — generate some" on the Visibility page — turns one
  * dimension's diagnosis directly into backlog action(s). Tagged with that
  * dimension by the caller so the page's count updates reliably rather than
- * depending on `categoryToVisibilityDimension` guessing right.
+ * depending on `categoryToVisibilityDimension` guessing right. `gsc` (the
+ * report's stored Search Console data, if any) sharpens the `google_search`
+ * dimension's action with a real query/page to target instead of only the
+ * one-sentence diagnosis.
  */
 export async function generateActionsForDimension(
   project: { name: string | null; url: string; category: string | null; icp: string | null },
   dimension: VisibilityDimension,
+  gsc: GscPerformance | null = null,
 ): Promise<DimensionAction[]> {
   const response = await anthropic.messages.parse({
     model: MODEL_WRITE,
     max_tokens: 1500,
     output_config: { format: zodOutputFormat(DimensionActionsSchema) },
     messages: [
-      { role: "user", content: dimensionActionPrompt(contextBlock(project, []), dimension) },
+      { role: "user", content: dimensionActionPrompt(contextBlock(project, []), dimension, gsc) },
     ],
   });
   return response.parsed_output?.actions ?? [];
@@ -471,6 +515,20 @@ export async function runVisibilityReport(
   try {
     const site = await analyzeWebsite(project.url);
     const onSiteChecks = buildOnSiteChecks(site.readinessChecks, site.discoverySignals);
+
+    // Real Search Console data, when connected and on a plan that includes
+    // it — optional and fail-open, same as the AI Visibility test below.
+    // Folds into onSiteChecks (so it grounds the dimension scoring) and is
+    // stored in full separately (for the UI and for action generation).
+    let gscPerformance: GscPerformance | null = null;
+    if (limits.gscIntegration && project.gscSiteUrl && project.gscConnectedByUserId) {
+      const token = await getAccessToken(project.gscConnectedByUserId);
+      if (token) {
+        gscPerformance = await fetchPerformance(token, project.gscSiteUrl);
+        if (gscPerformance) onSiteChecks.push(...gscOnSiteChecks(gscPerformance));
+      }
+    }
+
     const ctx = contextBlock(project, competitors);
 
     const dimResponse = await anthropic.messages.parse({
@@ -551,6 +609,7 @@ export async function runVisibilityReport(
         queries: queries as unknown as Prisma.InputJsonValue,
         aiSummary,
         findings: findings as unknown as Prisma.InputJsonValue,
+        gscPerformance: (gscPerformance as unknown as Prisma.InputJsonValue) ?? Prisma.JsonNull,
         completedAt: new Date(),
       },
     });

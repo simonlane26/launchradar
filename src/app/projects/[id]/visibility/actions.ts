@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { auth } from "@clerk/nextjs/server";
 import { requireOrganisation } from "@/lib/org";
 import { prisma } from "@/lib/prisma";
 import {
@@ -15,6 +16,8 @@ import { similarTitle } from "@/lib/action-dedup";
 import { assertQuota, recordUsage, limitsForOrg, PlanLimitError } from "@/lib/plan";
 import { SafeError, toUserMessage, logError } from "@/lib/errors";
 import { rateLimit, rateLimitMessage } from "@/lib/rate-limit";
+import { getAccessToken, listSites, resolveSiteForDomain } from "@/lib/gsc";
+import { domainOf } from "@/lib/url";
 
 export async function runVisibility(projectId: string) {
   const organisation = await requireOrganisation();
@@ -91,7 +94,11 @@ export async function generateDimensionActions(
 
   let generated: Awaited<ReturnType<typeof generateActionsForDimension>>;
   try {
-    generated = await generateActionsForDimension(project, dimension);
+    generated = await generateActionsForDimension(
+      project,
+      dimension,
+      report.gscPerformance as Parameters<typeof generateActionsForDimension>[2],
+    );
   } catch (error) {
     return { error: toUserMessage("generateDimensionActions", error, "Couldn't generate actions. Try again.") };
   }
@@ -129,5 +136,55 @@ export async function generateDimensionActions(
   await recordUsage(organisation.id, "AI_ACTION");
   revalidatePath(`/projects/${projectId}/visibility`);
   revalidatePath(`/projects/${projectId}/actions`);
+  return {};
+}
+
+/**
+ * "Connect Search Console" on the Visibility page. Assumes the founder has
+ * already connected Google (with the webmasters.readonly scope) via their
+ * Clerk account page — this just resolves which verified property matches
+ * the project's domain and stores it. No token is stored here or anywhere
+ * in this app; `src/lib/gsc.ts` fetches a fresh one from Clerk per request.
+ */
+export async function connectSearchConsole(projectId: string): Promise<{ error?: string }> {
+  const organisation = await requireOrganisation();
+  if (!limitsForOrg(organisation).gscIntegration) {
+    return { error: "Search Console isn't included on your current plan." };
+  }
+
+  const project = await prisma.project.findFirst({
+    where: { id: projectId, organisationId: organisation.id },
+  });
+  if (!project) throw new SafeError("Project not found.");
+
+  const { userId } = await auth();
+  if (!userId) throw new SafeError("Not authenticated.");
+
+  const rl = rateLimit(`gsc-sync:${organisation.id}`, { limit: 10, windowMs: 10 * 60_000 });
+  if (!rl.ok) return { error: rateLimitMessage(rl.retryAfterSec) };
+
+  const token = await getAccessToken(userId);
+  if (!token) {
+    return {
+      error:
+        "Connect Google in your account settings first (with Search Console access), then try again.",
+    };
+  }
+
+  const sites = await listSites(token);
+  const domain = domainOf(project.url);
+  const siteUrl = domain ? resolveSiteForDomain(sites, domain) : null;
+  if (!siteUrl) {
+    return {
+      error: `No verified Search Console property found for ${domain ?? project.url}. Verify it in Search Console, then try again.`,
+    };
+  }
+
+  await prisma.project.update({
+    where: { id: projectId },
+    data: { gscSiteUrl: siteUrl, gscConnectedByUserId: userId },
+  });
+
+  revalidatePath(`/projects/${projectId}/visibility`);
   return {};
 }

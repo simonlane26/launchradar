@@ -1,7 +1,13 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { runVisibility, addVisibilityFindingsToBacklog, generateDimensionActions } from "./actions";
+import { useClerk } from "@clerk/nextjs";
+import {
+  runVisibility,
+  addVisibilityFindingsToBacklog,
+  generateDimensionActions,
+  connectSearchConsole,
+} from "./actions";
 import type { DimensionKey } from "@/lib/visibility";
 
 export function VisibilityButton({
@@ -68,6 +74,58 @@ export function GenerateDimensionButton({
             <a href="/pricing" className="font-medium underline">
               See plans
             </a>
+          )}
+        </span>
+      )}
+    </span>
+  );
+}
+
+/**
+ * Connects a project to the founder's Google Search Console. Google itself
+ * is connected via Clerk's own account UI (`openUserProfile()` — Clerk
+ * hosts the OAuth consent screen and holds the token, nothing Google-side
+ * is stored here); this button then resolves which verified property
+ * matches the project's domain. Tries the resolve step first — if Google's
+ * already connected from a prior visit, it succeeds immediately with no
+ * extra click.
+ */
+export function GscConnectButton({ projectId, gated }: { projectId: string; gated: boolean }) {
+  const { openUserProfile } = useClerk();
+  const [isPending, startTransition] = useTransition();
+  const [result, setResult] = useState<{ error?: string } | null>(null);
+
+  const needsGoogleConnect = result?.error?.startsWith("Connect Google");
+
+  return (
+    <span className="flex flex-col items-start gap-1">
+      <button
+        type="button"
+        disabled={isPending || gated}
+        onClick={() => startTransition(async () => setResult(await connectSearchConsole(projectId)))}
+        className="text-left text-sm font-medium text-zinc-500 hover:text-zinc-800 disabled:opacity-50 dark:hover:text-zinc-200"
+      >
+        {isPending ? "Connecting…" : "Connect Search Console for real ranking data →"}
+      </button>
+      {gated && (
+        <span className="text-xs text-zinc-500 dark:text-zinc-400">
+          <a href="/pricing" className="font-medium underline">
+            Upgrade
+          </a>{" "}
+          to ground this score in real Google data.
+        </span>
+      )}
+      {result?.error && !gated && (
+        <span className="text-xs text-zinc-500 dark:text-zinc-400">
+          {result.error}{" "}
+          {needsGoogleConnect && (
+            <button
+              type="button"
+              onClick={() => openUserProfile()}
+              className="font-medium underline"
+            >
+              Connect Google
+            </button>
           )}
         </span>
       )}

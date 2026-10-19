@@ -106,6 +106,20 @@ model Project {
   pricing  String? // free-text pricing summary, e.g. "£12/month"
   stage    ProjectStage @default(NEW_LAUNCH)
 
+  /// The founder's confirmed Google Search Console property for this site
+  /// (e.g. "https://example.com/" or "sc-domain:example.com"), resolved by
+  /// matching their connected Google account's properties against this
+  /// project's domain. Null until connected — no token is stored here or
+  /// anywhere in this app; Clerk holds the Google OAuth credential and
+  /// `src/lib/gsc.ts` fetches a fresh access token from it per request.
+  gscSiteUrl String?
+  /// The Clerk *user* id (not org id) who connected Google — GSC access is
+  /// inherently per-user via Clerk, so later scans fetch this user's token
+  /// specifically, not whichever org member happens to trigger the run.
+  /// Degrades gracefully to null/no-GSC-data if that user's token is later
+  /// revoked, without affecting anyone else.
+  gscConnectedByUserId String?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -315,6 +329,13 @@ model VisibilityReport {
   aiSummary    Json? // { brandMentionRate, brandCitationRate, competitorMentionRate, competitorCitationRate, leaderboard, gaps } | null
   findings     Json? // [{ severity, area, title, why, suggestedActions: [{ title, category, deliverable, impact, effortMinutes }] }]
   rawOutput    Json?
+
+  /// Real Google Search Console data for this run, when the project has a
+  /// connected property — { siteUrl, totalClicks, totalImpressions,
+  /// avgPosition, strikingDistanceQueries, lowCtrPages }. Null when GSC
+  /// isn't connected or the plan tier doesn't include it; the report still
+  /// runs fully without it (see `gscIntegration` in plan.ts).
+  gscPerformance Json?
 
   errorMessage String?
 

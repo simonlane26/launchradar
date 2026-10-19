@@ -13,7 +13,13 @@ import type {
 } from "@/lib/visibility";
 import { loadProjectActions } from "../load-actions";
 import { limitsForOrg } from "@/lib/plan";
-import { VisibilityButton, AddFindingsButton, GenerateDimensionButton } from "./visibility-button";
+import type { GscPerformance } from "@/lib/gsc";
+import {
+  VisibilityButton,
+  AddFindingsButton,
+  GenerateDimensionButton,
+  GscConnectButton,
+} from "./visibility-button";
 
 function barColor(score: number): string {
   if (score < 34) return "bg-red-500";
@@ -65,7 +71,9 @@ export default async function VisibilityPage({
   const hasAnalysis = project.analyses.length > 0;
   const report = project.visibilityReports[0];
   const { queued } = await loadProjectActions(project.id);
-  const visibilityAiTest = limitsForOrg(organisation).visibilityAiTest;
+  const limits = limitsForOrg(organisation);
+  const visibilityAiTest = limits.visibilityAiTest;
+  const gscPerformance = report?.gscPerformance as unknown as GscPerformance | null;
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-8 px-6 py-16">
@@ -124,6 +132,16 @@ export default async function VisibilityPage({
                   </div>
                   <SegBar score={d.score} rowIndex={i} />
                   <p className="text-sm text-zinc-500">{d.detail}</p>
+                  {d.key === "google_search" &&
+                    (gscPerformance ? (
+                      <p className="text-xs text-zinc-400">
+                        Real data (28d): {gscPerformance.totalClicks} clicks ·{" "}
+                        {gscPerformance.totalImpressions} impressions · avg position{" "}
+                        {gscPerformance.avgPosition || "—"}
+                      </p>
+                    ) : (
+                      <GscConnectButton projectId={project.id} gated={!limits.gscIntegration} />
+                    ))}
                   {matches.length > 0 ? (
                     <Link
                       href={`/projects/${project.id}/actions?dimension=${d.key}`}
