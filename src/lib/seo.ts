@@ -99,3 +99,22 @@ export function breadcrumbJsonLd(trail: { name: string; path: string }[]): Json 
     })),
   };
 }
+
+/** For a sequential how-to guide — each step's `body` becomes its `text`. */
+export function howToJsonLd(opts: {
+  name: string;
+  description: string;
+  steps: { title: string; body: string }[];
+}): Json {
+  return {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    name: opts.name,
+    description: opts.description,
+    step: opts.steps.map((s) => ({
+      "@type": "HowToStep",
+      name: s.title,
+      text: s.body,
+    })),
+  };
+}

@@ -15,6 +15,9 @@ export function SiteHeader() {
           <Link href="/compare" className={`hidden sm:inline ${linkClass}`}>
             Compare
           </Link>
+          <Link href="/guides" className={`hidden sm:inline ${linkClass}`}>
+            Guides
+          </Link>
           <Link href="/faq" className={`hidden sm:inline ${linkClass}`}>
             FAQ
           </Link>
