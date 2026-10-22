@@ -19,17 +19,17 @@ import { rateLimit, rateLimitMessage } from "@/lib/rate-limit";
 import { getAccessToken, listSites, resolveSiteForDomain } from "@/lib/gsc";
 import { domainOf } from "@/lib/url";
 
-export async function runVisibility(projectId: string) {
+export async function runVisibility(projectId: string): Promise<{ error?: string }> {
   const organisation = await requireOrganisation();
 
   const project = await prisma.project.findFirst({
     where: { id: projectId, organisationId: organisation.id },
     select: { id: true },
   });
-  if (!project) throw new SafeError("Project not found.");
+  if (!project) return { error: "Project not found." };
 
   const rl = rateLimit(`ai-heavy:${organisation.id}`, { limit: 8, windowMs: 10 * 60_000 });
-  if (!rl.ok) throw new SafeError(rateLimitMessage(rl.retryAfterSec));
+  if (!rl.ok) return { error: rateLimitMessage(rl.retryAfterSec) };
 
   try {
     // Synchronous for the MVP — several web-search-grounded Claude calls,

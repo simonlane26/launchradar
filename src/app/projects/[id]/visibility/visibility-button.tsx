@@ -18,15 +18,24 @@ export function VisibilityButton({
   label?: string;
 }) {
   const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
   return (
-    <button
-      type="button"
-      disabled={isPending}
-      onClick={() => startTransition(() => runVisibility(projectId))}
-      className="flex h-11 items-center justify-center rounded-full bg-signal px-6 text-sm font-semibold text-signal-ink transition-colors hover:bg-signal-hi disabled:opacity-50"
-    >
-      {isPending ? "Scanning… (a few minutes)" : label}
-    </button>
+    <span className="flex flex-col items-start gap-1.5">
+      <button
+        type="button"
+        disabled={isPending}
+        onClick={() =>
+          startTransition(async () => {
+            const result = await runVisibility(projectId);
+            setError(result.error ?? null);
+          })
+        }
+        className="flex h-11 items-center justify-center rounded-full bg-signal px-6 text-sm font-semibold text-signal-ink transition-colors hover:bg-signal-hi disabled:opacity-50"
+      >
+        {isPending ? "Scanning… (a few minutes)" : label}
+      </button>
+      {error && <span className="text-xs text-red-600 dark:text-red-400">{error}</span>}
+    </span>
   );
 }
 
