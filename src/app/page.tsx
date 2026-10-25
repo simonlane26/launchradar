@@ -288,6 +288,16 @@ export default function Home() {
               loading="lazy"
             />
           </a>
+          <a href="https://favors.dev/b/launchradar" target="_blank" rel="noopener noreferrer">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="https://favors.dev/api/badge/launchradar"
+              alt="Launched with Favors.dev"
+              width={232}
+              height={44}
+              loading="lazy"
+            />
+          </a>
         </section>
 
         {/* What LaunchRadar Does */}
