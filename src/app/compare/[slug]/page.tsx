@@ -21,16 +21,16 @@ export async function generateMetadata({
   const c = getComparison(slug);
   if (!c) return {};
   return {
-    title: { absolute: c.title },
+    title: { absolute: c.metaTitle ?? c.title },
     description: c.summary,
     alternates: { canonical: `/compare/${c.slug}` },
     openGraph: {
-      title: c.title,
+      title: c.metaTitle ?? c.title,
       description: c.summary,
       url: absoluteUrl(`/compare/${c.slug}`),
       type: "article",
     },
-    twitter: { card: "summary", title: c.title, description: c.summary },
+    twitter: { card: "summary", title: c.metaTitle ?? c.title, description: c.summary },
   };
 }
 
@@ -88,6 +88,42 @@ export default async function ComparisonPage({
           ))}
         </div>
 
+        {c.featureTable && (
+          <div className="mt-10 overflow-x-auto rounded-2xl border border-zinc-200 dark:border-zinc-800">
+            <table className="w-full min-w-[560px] border-collapse text-sm">
+              <thead>
+                <tr className="border-b border-zinc-200 dark:border-zinc-800">
+                  <th className="px-4 py-3 text-left font-medium text-zinc-500">Feature</th>
+                  <th className="bg-zinc-50 px-4 py-3 text-left font-semibold dark:bg-zinc-900">
+                    LaunchRadar
+                  </th>
+                  <th className="px-4 py-3 text-left font-semibold">{c.alternative}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {c.featureTable.map((row) => (
+                  <tr key={row.feature} className="border-b border-zinc-100 last:border-0 dark:border-zinc-900">
+                    <td className="px-4 py-3 font-medium text-zinc-700 dark:text-zinc-300">
+                      {row.feature}
+                    </td>
+                    <td className="bg-zinc-50 px-4 py-3 text-zinc-600 dark:bg-zinc-900 dark:text-zinc-400">
+                      {row.launchradar}
+                    </td>
+                    <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400">{row.rival}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {c.verdict && (
+          <p className="mt-6 leading-7 text-zinc-700 dark:text-zinc-300">
+            <span className="font-semibold">Verdict: </span>
+            {c.verdict}
+          </p>
+        )}
+
         <div className="mt-12 grid gap-4 sm:grid-cols-2">
           <section className="rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-950">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
@@ -132,7 +168,7 @@ export default async function ComparisonPage({
               href="/sign-up"
               className="inline-flex h-11 items-center justify-center rounded-full bg-signal px-6 text-sm font-semibold text-signal-ink transition-colors hover:bg-signal-hi"
             >
-              Get your Growth Score
+              {c.ctaLabel ?? "Get your Growth Score"}
             </Link>
             <Link
               href="/pricing"

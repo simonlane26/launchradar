@@ -16,14 +16,25 @@ export type Comparison = {
   alternative: string;
   /** page + card headline, e.g. "LaunchRadar vs AI social media managers" */
   title: string;
+  /** <title> override for named-product comparisons that want different SEO
+   *  title copy than the on-page H1 (e.g. a year-stamped "(2026 Comparison
+   *  for Indie Founders)" suffix) — defaults to `title` when omitted. */
+  metaTitle?: string;
   /** one-line summary for the card and meta description */
   summary: string;
   /** 2–3 short paragraphs: what the alternative is, how LaunchRadar differs */
   body: string[];
+  /** Exactly 3 rows, for a named-product (not conceptual-category) rival —
+   *  keep it fair: at least one row should favour the rival honestly. */
+  featureTable?: { feature: string; launchradar: string; rival: string }[];
+  /** Short balanced verdict paragraph, shown under the feature table. */
+  verdict?: string;
   /** honest "pick the other one when…" list */
   chooseAlternativeWhen: string[];
   /** "pick LaunchRadar when…" list */
   chooseLaunchRadarWhen: string[];
+  /** CTA button label — defaults to "Get your Growth Score" when omitted. */
+  ctaLabel?: string;
 };
 
 export const COMPARISONS: Comparison[] = [
@@ -112,6 +123,49 @@ export const COMPARISONS: Comparison[] = [
       "You want it to persist, update and surface new opportunities over time.",
       "You want the drafts, the scoring and the skip calls in one place.",
     ],
+  },
+  {
+    slug: "chatseo",
+    alternative: "ChatSEO",
+    title: "LaunchRadar vs ChatSEO: Which Is Better for Indie Founders?",
+    metaTitle: "LaunchRadar vs ChatSEO (2026 Comparison for Indie Founders)",
+    summary:
+      "ChatSEO is a sharper pick for SEO specifically. LaunchRadar covers more of what actually gets an indie founder their first users.",
+    body: [
+      "ChatSEO is a dedicated AI SEO tool: connect Google Search Console, Analytics and your CMS, and it audits your site, diagnoses traffic drops, analyses competitor keywords, and can draft or publish fixes — all grounded in your real connected data rather than a model's memory. It also ships an MCP server and API, so it can be called directly from Claude, ChatGPT or Cursor.",
+      "LaunchRadar starts a layer up and goes wider. SEO is one of six Growth Score dimensions (alongside positioning, conversion, trust, distribution and analytics), and Search & AI Visibility can pull in the same kind of real Search Console data ChatSEO is built around. The parts ChatSEO doesn't attempt: Opportunity Radar finds people already describing your problem in communities you're not watching, and Launch Mode gives explicit go/skip verdicts across 15 launch channels — not just how to rank higher on a search you're already in the running for.",
+      "Where ChatSEO is genuinely ahead today: it's usable directly inside your AI coding tool via MCP, and its SEO diagnostics are deeper and more specialised, since that's the entire product. If SEO is your actual bottleneck, not finding users at all, ChatSEO may be the better-fitted tool.",
+    ],
+    featureTable: [
+      {
+        feature: "Primary focus",
+        launchradar: "Full growth system — positioning, conversion, trust, SEO, launch channels",
+        rival: "Dedicated SEO specialist — audits, content, rankings",
+      },
+      {
+        feature: "Finds new users outside your own site",
+        launchradar: "Yes — Opportunity Radar surfaces real conversations where people need your product",
+        rival: "No — works only on your existing site's SEO",
+      },
+      {
+        feature: "Usable inside Claude / Cursor (MCP or API)",
+        launchradar: "Not yet — web dashboard only",
+        rival: "Yes — ships an MCP server and API",
+      },
+    ],
+    verdict:
+      "If SEO specifically is what's holding you back and you want it wired straight into Claude or Cursor, ChatSEO is the sharper, more specialised tool. If your gap is broader than rankings — you also need to know what to fix about positioning and conversion, where to launch, and who's already asking for what you built — LaunchRadar covers more of the actual path to your first users in one place.",
+    chooseAlternativeWhen: [
+      "SEO rankings and organic traffic are your specific, isolated bottleneck.",
+      "You want it callable directly from inside Claude, ChatGPT or Cursor via MCP/API.",
+      "You're managing SEO across multiple existing sites, not launching a new one.",
+    ],
+    chooseLaunchRadarWhen: [
+      "You need more than SEO fixed — positioning, conversion and trust gaps too.",
+      "You want to find people already asking for what you built, not just rank for them.",
+      "You want a curated 30-day launch channel plan, not just an SEO audit.",
+    ],
+    ctaLabel: "Try LaunchRadar Free",
   },
 ];
 

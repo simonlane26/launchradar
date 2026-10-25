@@ -99,6 +99,42 @@ export const GUIDES: Guide[] = [
       "That's exactly what LaunchRadar is for — a lightweight dashboard that tracks your launch channels, signups, and what's actually converting, built for solo founders who don't have time to stitch together five tools just to know what's working.",
     ctaLabel: "Start tracking your launch free →",
   },
+  {
+    slug: "how-to-track-product-launch-metrics",
+    title: "How to Track Product Launch Metrics When You're a Team of One",
+    description:
+      "No analytics team, no dashboard to build. Here's what to actually track during your launch, and what to ignore.",
+    intro: [
+      "Most solo founders handle launch metrics one of two ways: they track nothing and just refresh their signup count all day, or they spend launch week wiring up a full analytics stack instead of actually launching.",
+      "Neither works. You don't need more data during a launch — you need the 4-5 numbers that tell you whether it's working, and a habit of actually looking at them.",
+    ],
+    steps: [
+      {
+        title: "Decide what \"working\" means before you launch, not after",
+        body: "Pick one or two real signals in advance — signups, a specific activation action, or replies to outreach — not \"traffic\" or \"impressions.\" Vanity metrics go up during every launch regardless of whether it actually worked; decide what you're optimizing for before the noise starts.",
+      },
+      {
+        title: "Tag every link before you post it",
+        body: "Add a UTM parameter (or even just a distinct short link) to every launch post, comment, and DM. Without this, a signup spike tells you nothing about which channel caused it — and that's the one thing you actually need to know for next time.",
+      },
+      {
+        title: "Watch signups per channel, not total traffic",
+        body: "A Product Hunt spike that brings 500 visitors and 2 signups is worse than a subreddit comment that brings 20 visitors and 8 signups. Track conversion per channel, not raw volume — it's the only way to know where to spend your next launch week.",
+      },
+      {
+        title: "Check who actually comes back, not just who signs up",
+        body: "A signup that never returns isn't a win yet. Keep half an eye on whether people who sign up on launch day actually do the thing your product is for — that's the real signal buried under the launch-day noise.",
+      },
+      {
+        title: "Review weekly, not hourly",
+        body: "Checking your numbers every hour during launch week just measures your anxiety, not your traction. Pick one time a week to actually sit down and look at channel-by-channel performance — that's enough cadence to spot what's working without obsessing over noise.",
+      },
+    ],
+    ctaHeading: "You don't need a dashboard. You need to know what's working.",
+    ctaBody:
+      "LaunchRadar tracks your Growth Score and completed actions over time, so you can see what's actually moving the needle without stitching together five analytics tools yourself.",
+    ctaLabel: "Track my launch free →",
+  },
 ];
 
 export function getGuide(slug: string): Guide | undefined {
