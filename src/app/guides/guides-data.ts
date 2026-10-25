@@ -23,6 +23,7 @@ export type Guide = {
   steps: GuideStep[];
   ctaHeading: string;
   ctaBody: string;
+  ctaLabel: string;
 };
 
 export const GUIDES: Guide[] = [
@@ -57,6 +58,46 @@ export const GUIDES: Guide[] = [
     ctaHeading: "You don't need a marketing degree. You need a map.",
     ctaBody:
       "LaunchRadar shows indie founders where today's traction is actually coming from — so your first users aren't a mystery.",
+    ctaLabel: "Start finding your users →",
+  },
+  {
+    slug: "first-100-users",
+    title: "How to Get Your First 100 Users as an Indie Founder",
+    description:
+      "A no-fluff playbook for solo founders who shipped something good and now need people to see it.",
+    intro: [
+      "You built the thing. That was the hard part, or so you thought. Now it's live, you've told your mom and two friends from Discord, and the user count is stuck at single digits. You're not alone — most indie founders hit this wall right after launch, and it has nothing to do with your product being bad.",
+    ],
+    steps: [
+      {
+        title: "Why \"just launch on Product Hunt\" isn't a strategy",
+        body: "Product Hunt gives you a day. Reddit gives you a thread. Twitter gives you an afternoon. None of that is distribution — it's a spike. What actually gets you to 100 real users is a handful of repeatable channels run consistently for 2-4 weeks. That's it. Not virality. Repetition.",
+      },
+      {
+        title: "Pick 3 channels, not 10",
+        body: "Spreading yourself across every platform is how you end up with no presence anywhere. For most indie SaaS, the right starting three are: one community (where your ICP already hangs out), one content channel (SEO or Twitter/X), and one direct outreach channel (cold DMs or email to people who'd actually want this).",
+      },
+      {
+        title: "Find where your ICP already complains",
+        body: "Search Reddit, niche Slack/Discord communities, and X for the exact problem your product solves. Don't pitch. Answer the question like a human, then mention your tool only if it's genuinely relevant. This alone can bring in a meaningful chunk of your first users.",
+      },
+      {
+        title: "Ship a \"launch week,\" not a launch day",
+        body: "Stack your announcements: Product Hunt Tuesday, a relevant subreddit Wednesday, a cold outreach batch Thursday, a founder story post Friday. Momentum compounds across a week far better than one big push.",
+      },
+      {
+        title: "Track what's actually working",
+        body: "Most indie founders lose weeks guessing which channel drove signups because nothing's tracked. You don't need a full analytics stack for this — you need a lightweight way to see which launch moves actually move the needle, so you can double down instead of spraying and praying.",
+      },
+      {
+        title: "Talk to every single one of your first users",
+        body: "At this stage, 100 users isn't a vanity number — it's 100 conversations waiting to happen. Ask why they signed up, what almost stopped them, what they'd tell a friend. This is your actual marketing research, and it's free.",
+      },
+    ],
+    ctaHeading: "You don't need a marketing team. You need a system.",
+    ctaBody:
+      "That's exactly what LaunchRadar is for — a lightweight dashboard that tracks your launch channels, signups, and what's actually converting, built for solo founders who don't have time to stitch together five tools just to know what's working.",
+    ctaLabel: "Start tracking your launch free →",
   },
 ];
 

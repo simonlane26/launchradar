@@ -95,7 +95,7 @@ export default async function GuidePage({
               href={`/sign-up?utm_source=guide&utm_medium=cta&utm_campaign=${g.slug}`}
               className="inline-flex h-11 items-center justify-center rounded-full bg-signal px-6 text-sm font-semibold text-signal-ink transition-colors hover:bg-signal-hi"
             >
-              Start finding your users →
+              {g.ctaLabel}
             </Link>
           </div>
         </div>
