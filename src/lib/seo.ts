@@ -118,3 +118,23 @@ export function howToJsonLd(opts: {
     })),
   };
 }
+
+/** For a roundup/listicle guide (e.g. "best tools for X") — unlike HowTo,
+ *  items here aren't sequential instructions, just a list, so this is the
+ *  schema-accurate choice when a guide isn't actually a set of steps. */
+export function itemListJsonLd(opts: {
+  name: string;
+  items: { title: string; body: string }[];
+}): Json {
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name: opts.name,
+    itemListElement: opts.items.map((item, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      name: item.title,
+      description: item.body,
+    })),
+  };
+}

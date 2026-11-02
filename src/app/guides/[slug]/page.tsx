@@ -5,7 +5,7 @@ import { IconArrowLeft } from "@tabler/icons-react";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { JsonLd } from "@/components/json-ld";
-import { absoluteUrl, breadcrumbJsonLd, howToJsonLd } from "@/lib/seo";
+import { absoluteUrl, breadcrumbJsonLd, howToJsonLd, itemListJsonLd } from "@/lib/seo";
 import { GUIDES, getGuide } from "../guides-data";
 
 export function generateStaticParams() {
@@ -54,7 +54,9 @@ export default async function GuidePage({
             { name: "Guides", path: "/guides" },
             { name: g.title, path: `/guides/${g.slug}` },
           ]),
-          howToJsonLd({ name: g.title, description: g.description, steps: g.steps }),
+          g.schemaType === "itemlist"
+            ? itemListJsonLd({ name: g.title, items: g.steps })
+            : howToJsonLd({ name: g.title, description: g.description, steps: g.steps }),
         ]}
       />
 

@@ -21,6 +21,11 @@ export type Guide = {
   /** 2-3 paragraphs, no heading — sets up the problem before the steps. */
   intro: string[];
   steps: GuideStep[];
+  /** "howto" (default) for sequential instructions — JSON-LD HowTo/HowToStep.
+   *  "itemlist" for a roundup/listicle (e.g. "best tools for X") where the
+   *  entries aren't ordered steps — JSON-LD ItemList/ListItem instead, the
+   *  schema-accurate choice so this doesn't read as step-markup abuse. */
+  schemaType?: "howto" | "itemlist";
   ctaHeading: string;
   ctaBody: string;
   ctaLabel: string;
@@ -134,6 +139,43 @@ export const GUIDES: Guide[] = [
     ctaBody:
       "LaunchRadar tracks your Growth Score and completed actions over time, so you can see what's actually moving the needle without stitching together five analytics tools yourself.",
     ctaLabel: "Track my launch free →",
+  },
+  {
+    slug: "best-marketing-tools-for-indie-founders",
+    title: "Best Marketing Tools for Indie Founders in 2026 (No Marketing Degree Required)",
+    description:
+      "Not another 50-tool roundup. The specific tools worth an indie founder's time for launching, building in public, and getting your first users — including where LaunchRadar fits and where it doesn't.",
+    intro: [
+      "You shipped the product. That was the hard part, right? Then you launched on a Tuesday, told your friends, posted on X — and got four signups, two of which were you testing in incognito.",
+      "Here's the thing nobody tells you: building and marketing are different skills, and most indie founders only trained one of them. Below are the tools actually worth your time — not a generic \"50 best SaaS tools\" list, but what helps when you're solo, scrappy, and have zero marketing background.",
+    ],
+    schemaType: "itemlist",
+    steps: [
+      {
+        title: "LaunchRadar — for getting your launch seen",
+        body: "Most launch checklists assume you already know where to post, when, and what to say. LaunchRadar is built for founders who don't — it reads your product and turns that into a 30-day launch plan: which channels to use and skip, a week-by-week schedule, and a curated directory list for your specific category, instead of making you guess or spray your link across every list you find on Google. Best for founders who've shipped but have no marketing muscle yet; less useful if you already have a growth hire running a system.",
+      },
+      {
+        title: "Indie Hackers — for building in public",
+        body: "Still one of the best places to find your first users who actually get what you're building. Go there to post updates, not to lurk — the community rewards founders who show up consistently. Best for accountability and early feedback loops.",
+      },
+      {
+        title: "ChatGPT or Claude — for writing copy you're too close to write",
+        body: "Not a hot take, but worth saying: use AI to draft your landing page copy, then cut it in half. Founders over-explain; AI over-explains more. Treat it as a first draft tool, not a source of final copy.",
+      },
+      {
+        title: "Twitter/X and niche subreddits — for distribution without ad spend",
+        body: "Free, slow, and compounding. Pick 2-3 communities where your actual users hang out — not where other founders hang out, which is usually a different place — and be useful before you self-promote. Best for founders with time rather than money.",
+      },
+      {
+        title: "A simple ESP like Buttondown or Resend — for email you'll actually send",
+        body: "You don't need HubSpot. You need one email a week to the people who signed up and then went quiet. Most indie founders lose users not because the product is bad, but because nobody ever followed up.",
+      },
+    ],
+    ctaHeading: "The real takeaway",
+    ctaBody:
+      "Most of these tools help you create or distribute content. Almost none of them tell you when and where to actually launch — which is the step most indie founders skip entirely, then wonder why nobody saw it. That gap is exactly why we built LaunchRadar.",
+    ctaLabel: "See how LaunchRadar works →",
   },
 ];
 
