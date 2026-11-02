@@ -167,6 +167,49 @@ export const COMPARISONS: Comparison[] = [
     ],
     ctaLabel: "Try LaunchRadar Free",
   },
+  {
+    slug: "launchradar-vs-indiehackers",
+    alternative: "IndieHackers",
+    title: "LaunchRadar vs IndieHackers",
+    metaTitle: "LaunchRadar vs IndieHackers: Which One Actually Gets You Users?",
+    summary:
+      "IndieHackers teaches you marketing. LaunchRadar tells you exactly what to do next for your product, today.",
+    body: [
+      "IndieHackers is a community and content hub — full of good advice, founder stories and forum threads. It won't tell you what your product should post today, where your launch should go this week, or why your signups flatlined. You still have to read, interpret and execute everything yourself.",
+      "LaunchRadar is built for founders who've already shipped and don't have time to become marketers themselves. Submit your URL and it tells you what to do next — which channels to launch on, what to post, when to follow up — specific to your product and stage, not generic advice everyone on a forum gets.",
+      "The honest answer is you can use both: IndieHackers for community and finding other builders, LaunchRadar for the concrete next step once you're done reading and just need a plan. If you genuinely enjoy piecing together your own strategy from case studies and forum threads, IndieHackers and some patience might be all you need — LaunchRadar exists for founders who'd rather ship and let something else figure out the next move.",
+    ],
+    featureTable: [
+      {
+        feature: "Personalization",
+        launchradar: "Recommendations based on your product, stage and traction",
+        rival: "Not product-specific — the same articles and forum threads for every founder",
+      },
+      {
+        feature: "Time to value",
+        launchradar: "Minutes — submit your URL, get a plan",
+        rival: "Hours of reading before you find something relevant",
+      },
+      {
+        feature: "Marketing experience required",
+        launchradar: "None — built for people with zero marketing background",
+        rival: "Helps if you already know the basics",
+      },
+    ],
+    verdict:
+      "IndieHackers answers what worked for other people. LaunchRadar answers what you should do next, for your product, right now. If you're past the stage of needing inspiration and just need a plan, that's LaunchRadar — plenty of founders genuinely use both: IndieHackers for community, LaunchRadar for execution.",
+    chooseAlternativeWhen: [
+      "You like community, founder stories and long-form learning more than a prescribed plan.",
+      "You want to figure out your own strategy by reading case studies and piecing it together yourself.",
+      "You mainly want a place to post your launch and find other builders, not a plan telling you what's next.",
+    ],
+    chooseLaunchRadarWhen: [
+      "You've already shipped and need a concrete next step today, not more reading.",
+      "You want recommendations based on your actual product, stage and traction — not generic advice.",
+      "You have zero marketing background and would rather something else figure out the next move.",
+    ],
+    ctaLabel: "Try LaunchRadar Free",
+  },
 ];
 
 export function getComparison(slug: string): Comparison | undefined {
