@@ -131,6 +131,8 @@ model Project {
   radarQueries      RadarQuery[]
   radarScans        RadarScan[]
   opportunities     Opportunity[]
+  queueItems        QueueItem[]
+  channelProfiles   ChannelProfile[]
 
   @@index([organisationId])
   @@map("projects")
@@ -292,6 +294,8 @@ model Action {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  queueItems QueueItem[]
 
   @@index([organisationId])
   @@index([projectId, status])
@@ -489,7 +493,8 @@ model Opportunity {
 
   createdAt DateTime @default(now())
 
-  feedback OpportunityFeedback[]
+  feedback   OpportunityFeedback[]
+  queueItems QueueItem[]
 
   @@unique([projectId, url])
   @@index([organisationId])
@@ -508,6 +513,77 @@ model OpportunityFeedback {
 
   @@index([opportunityId])
   @@map("opportunity_feedback")
+}
+
+enum QueueChannel {
+  PRODUCT_HUNT
+  INDIE_HACKERS
+  REDDIT
+  LINKEDIN
+  X_TWITTER
+  BLOG
+}
+
+enum QueueItemStatus {
+  PLANNED
+  POSTED
+  SKIPPED
+}
+
+/// One scheduled "this week" posting slot — the cross-project scheduling
+/// layer over Actions/Opportunities. Deliberately doesn't duplicate drafted
+/// content: `actionId`/`opportunityId` point back at the real Action.guide
+/// or Opportunity.reply text, this row only adds channel/day/status on top.
+/// Exactly one of `actionId`/`opportunityId` is set.
+model QueueItem {
+  id             String  @id @default(cuid())
+  organisationId String
+  projectId      String
+  project        Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  actionId      String?
+  action        Action?      @relation(fields: [actionId], references: [id], onDelete: Cascade)
+  opportunityId String?
+  opportunity   Opportunity? @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+
+  channel      QueueChannel
+  scheduledFor DateTime
+  status       QueueItemStatus @default(PLANNED)
+  /// Set on "Mark posted" — optional, since not every channel's real URL is
+  /// worth the friction of asking for. Not yet tied to anything (Analytics/
+  /// Experiments don't exist as real features yet) — collected now because
+  /// it's cheap to capture and expensive to backfill later.
+  postedUrl String?
+  postedAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organisationId])
+  @@index([projectId, status])
+  @@index([organisationId, scheduledFor])
+  @@map("queue_items")
+}
+
+/// Which channels a project is actually active on, and the weekly cap that
+/// keeps the cross-project queue from becoming an overwhelming list when a
+/// founder runs several projects at once.
+model ChannelProfile {
+  id             String  @id @default(cuid())
+  organisationId String
+  projectId      String
+  project        Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  channel    QueueChannel
+  active     Boolean @default(true)
+  maxPerWeek Int     @default(1)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([projectId, channel])
+  @@index([organisationId])
+  @@map("channel_profiles")
 }
 
 /// Marketing email capture — the landing-page "first-users playbook" form.

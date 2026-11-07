@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { UserButton } from "@clerk/nextjs";
 import { requireOrganisation } from "@/lib/org";
 import { prisma } from "@/lib/prisma";
 import { limitsForOrg, planLabel, formatLimit } from "@/lib/plan";
@@ -35,30 +34,24 @@ export default async function DashboardPage() {
 
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-10 px-6 py-16">
-      <header className="flex items-center justify-between">
-        <div>
-          <p className="text-sm font-medium uppercase tracking-widest text-zinc-500">
-            LaunchRadar
-          </p>
-          <h1 className="text-2xl font-semibold tracking-tight text-black dark:text-zinc-50">
-            Dashboard
-          </h1>
-          <p className="mt-1 text-sm text-zinc-500">
-            Plan: {planLabel(organisation)} ·{" "}
-            {organisation.stripeCustomerId ? (
-              <form action={openBillingPortal} className="inline">
-                <button type="submit" className="underline hover:text-black dark:hover:text-zinc-100">
-                  Manage billing
-                </button>
-              </form>
-            ) : (
-              <Link href="/pricing" className="underline">
-                See plans
-              </Link>
-            )}
-          </p>
-        </div>
-        <UserButton />
+      <header>
+        <h1 className="text-2xl font-semibold tracking-tight text-black dark:text-zinc-50">
+          Dashboard
+        </h1>
+        <p className="mt-1 text-sm text-zinc-500">
+          Plan: {planLabel(organisation)} ·{" "}
+          {organisation.stripeCustomerId ? (
+            <form action={openBillingPortal} className="inline">
+              <button type="submit" className="underline hover:text-black dark:hover:text-zinc-100">
+                Manage billing
+              </button>
+            </form>
+          ) : (
+            <Link href="/pricing" className="underline">
+              See plans
+            </Link>
+          )}
+        </p>
       </header>
 
       <section className="rounded-2xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950">

@@ -10,8 +10,9 @@ import { logError } from "@/lib/errors";
  *
  * Emails: playbook autoresponder (landing), welcome (first sign-in),
  * analysis complete (first Growth Score), Radar high-intent alert (score
- * ≥ 85). The last two carry an unsubscribe link and respect
- * `Organisation.emailOptOut`; welcome + playbook do not (pure transactional).
+ * ≥ 85), Monday posting-queue digest. All but welcome + playbook carry an
+ * unsubscribe link and respect `Organisation.emailOptOut` (welcome and
+ * playbook are pure transactional).
  */
 
 export const emailEnabled = Boolean(process.env.RESEND_API_KEY);
@@ -246,4 +247,34 @@ export async function sendRadarAlertEmail(opts: {
       <p style="margin:10px 0 0;font-size:13px;line-height:1.6;color:#71717a">LaunchRadar only sends immediate alerts for your strongest opportunities. Lower-scoring findings remain available in your Radar.</p>`,
   });
   return send(opts.to, subject, html, "sendRadarAlertEmail");
+}
+
+// --- Monday posting-queue digest --------------------------------------------
+
+export async function sendWeeklyDigestEmail(opts: {
+  to: string;
+  orgId: string;
+  firstName?: string;
+  items: { projectName: string; channel: string; title: string }[];
+  overdueCount: number;
+  queueUrl: string;
+}): Promise<boolean> {
+  const hi = opts.firstName ? `Hi ${esc(opts.firstName)},` : "Hi,";
+  const row = (i: { projectName: string; channel: string; title: string }) =>
+    `<p style="margin:0 0 2px;font-size:14px;font-weight:600;color:#111">${esc(i.projectName)} · ${esc(i.channel)}</p><p style="margin:0 0 14px;font-size:14px;line-height:1.5;color:#444">${esc(i.title)}</p>`;
+  const overdue =
+    opts.overdueCount > 0
+      ? `<p style="margin:16px 0 0;font-size:13px;color:#b45309">${opts.overdueCount} item${opts.overdueCount === 1 ? "" : "s"} from last week ${opts.overdueCount === 1 ? "is" : "are"} still unposted.</p>`
+      : "";
+  const html = shell({
+    preheader: "What's queued across your projects this week.",
+    heading: "This week's queue",
+    orgId: opts.orgId,
+    bodyHtml: `
+      <p style="margin:0 0 16px;font-size:15px;line-height:1.6">${hi} here's what's planned across your projects this week.</p>
+      ${opts.items.map(row).join("")}
+      ${overdue}
+      ${btn(opts.queueUrl, "Open this week →")}`,
+  });
+  return send(opts.to, "This week's posting queue", html, "sendWeeklyDigestEmail");
 }

@@ -152,7 +152,18 @@ src/app/sitemap.ts         Public routes only (static + every /compare/[slug])
 src/app/robots.ts          Allow all; disallow /dashboard, /projects/, /sign-in, /sign-up
 src/components/site-header.tsx  Shared top bar for the public marketing pages (Compare / FAQ /
                               Pricing + auth link)
-src/app/dashboard/          Add-a-URL form + project list
+src/app/(app)/               Shared chrome for signed-in top-level routes — layout.tsx +
+                              top-nav.tsx (Projects / This Week / UserButton). Route group,
+                              doesn't affect URLs.
+  ├─ dashboard/              Add-a-URL form + project list (same /dashboard URL as before)
+  └─ queue/                  Cross-project "This Week" posting queue — see "Cross-project
+                              posting queue" above. page.tsx + queue-item-card.tsx +
+                              add-to-queue-panel.tsx + channel-profiles-panel.tsx + actions.ts
+src/lib/queue.ts            Client-safe queue constants/types only — no Prisma import, see
+                              "Cross-project posting queue" above for why that split matters
+src/lib/queue-server.ts     Database-touching queue helpers (eligibleDrafts, cadenceRemaining)
+src/app/api/cron/weekly-digest/route.ts   Monday digest — self-authenticates via CRON_SECRET,
+                              needs an external trigger (Railway Cron Job) outside this repo
 src/app/projects/[id]/      Per-project shell: layout.tsx + project-nav.tsx sidebar wrap
                               every child route below
   ├─ page.tsx (Overview)   Metric row (Growth Score tile → /score), next-best-action, Launch
@@ -462,6 +473,80 @@ The pipeline (`src/lib/radar.ts`), one call per stage:
   writes genuinely useful advice first and mentions the product only if it
   naturally fits — LaunchRadar never auto-posts; it's draft → copy → the
   founder pastes it themselves.
+
+## Cross-project posting queue — **foundation phase built**
+
+```
+Project
+  ├── ChannelProfile[]  (channel: QueueChannel, active, maxPerWeek)
+  │                      @@unique([projectId, channel])
+  └── QueueItem[]        (channel, scheduledFor, status, postedUrl?, postedAt?)
+        ├── action       Action?       (exactly one of action/opportunity set)
+        └── opportunity  Opportunity?
+```
+
+A founder running several projects has no single place that says "this
+week, across everything, here's what to post and where" — each project's
+Growth Backlog and Radar are siloed. `QueueItem` is the scheduling layer on
+top, not a fourth content silo: it never duplicates drafted text, only
+references an existing `Action` (ASSET deliverable with a generated
+`guide`) or `Opportunity` (with a generated `reply`) and adds
+channel/day/status. `ChannelProfile` is the per-project cadence
+("2 posts a week, no more than 1 Reddit") that keeps the cross-project
+queue from becoming an overwhelming list — enforced as *guidance* (a
+warning on `addToQueue`), not a hard block.
+
+- `QueueChannel` is deliberately **not** the 15-value `LaunchChannel` enum
+  in `launch.ts` — that list mixes one-off campaign channels (`press`,
+  `directories`, `cold_email`) with recurring ones, and a weekly cadence
+  only makes sense for the latter. `QueueChannel` is the 6 recurring
+  channels that fit LaunchRadar's existing ICP (Product Hunt, Indie
+  Hackers, Reddit, LinkedIn, X/Twitter, Blog) — bridging `LaunchPlan`'s
+  assets into the queue automatically is future work (see below).
+- `src/lib/queue.ts` holds only client-safe constants/types (channel
+  labels, compose-URL map, week-boundary math) — **no Prisma import**.
+  Database-touching helpers (`eligibleDrafts`, `cadenceRemaining`) live in
+  `src/lib/queue-server.ts` instead. This split is load-bearing, not a
+  style choice: the client components under `src/app/(app)/queue/` import
+  from `queue.ts`, and mixing a `prisma` import into that file broke the
+  Turbopack production build entirely ("chunking context does not support
+  external modules") by pulling Prisma's Node-only dependency chain into
+  the browser bundle.
+- **No new quota/rate-limit gate.** Queue mutations
+  (`src/app/(app)/queue/actions.ts`) are plain org-scoped CRUD — no Claude
+  calls — so they skip the `rateLimit` → `assertQuota` pattern
+  `generateActionGuide`/`draftReply` use. Not plan-tier-gated either;
+  available on every tier like the Growth Backlog. A `PlanLimits` boolean
+  gate (the `gscIntegration` pattern) can be added later if it's worth
+  gating once the feature's proven.
+- **New shared nav shell**: there was no top-level authenticated layout
+  before this — `/dashboard` was a standalone page with its own inline
+  header, nothing linking to anything else (only per-project routes had a
+  real nav, `ProjectNav`). `src/app/(app)/layout.tsx` + `top-nav.tsx` is a
+  new, deliberately lightweight top bar (Projects / This Week /
+  `UserButton`) wrapping both `/dashboard` (moved into the route group,
+  same URL, no behavior change) and the new `/queue`.
+- **Monday digest** (`sendWeeklyDigestEmail` in `email.ts`,
+  `/api/cron/weekly-digest`): this needed genuinely new infrastructure —
+  confirmed zero cron/scheduler exists anywhere else in this app (single
+  Next.js web service on Railway, no second worker process unlike sibling
+  project VibeCheck). The route self-authenticates via `CRON_SECRET`
+  (`timingSafeEqual`, same pattern as `/api/unsubscribe`'s HMAC token) and
+  **fails closed** if the env var is unset — same fail-closed convention as
+  the Clerk admin bypass. `proxy.ts` lists `/api/cron(.*)` as public since
+  the route protects itself. Needs an external trigger wired up outside
+  this repo (a Railway Cron Job service hitting the route weekly) — not
+  something configurable from code.
+
+**Deferred, not built**: tying `postedUrl` into Analytics/Experiments
+scoring (those tabs are themselves still `ComingSoon`); portfolio
+awareness ("this project's gone quiet, no posts in 2 weeks"); Launch
+Mode's 30-day plan auto-populating the queue as dated, draggable items;
+direct publishing (skipping the composer hand-off) for lower-risk
+channels; small-business channel presets (Google Business Profile,
+Facebook) — the last one is a separate ICP-expansion decision, since the
+rest of the app's positioning is built entirely around indie/no-code
+founders, not local businesses.
 
 ## Plan tiers & usage metering
 
@@ -830,6 +915,34 @@ category. See "Data model (Phase 3)" below for the full pipeline.
 - [ ] "Find me customers" — a simple radio-button front door over this same
       engine, planned as a fast-follow once the core pipeline is proven
 - [ ] Raise past 16 queries once scan latency is off the request path
+
+### Phase 3b — Cross-project posting queue — **foundation built**
+
+A founder running several projects has no single place that says "this
+week, across everything, here's what to post and where" — see "Cross-project
+posting queue" above for the full data model and architecture.
+
+- [x] `QueueItem` + `ChannelProfile` models — the scheduling layer over
+      drafted Actions/Opportunities, never duplicating their text
+- [x] Cross-project "This Week" view (`/queue`) — grouped by day, Copy /
+      Open composer / Mark posted / Skip per item
+- [x] Channel profiles per project — active channels + weekly cap,
+      enforced as guidance (a warning), not a hard block
+- [x] New shared top-level nav (`src/app/(app)/`) — there was none before;
+      `/dashboard` was a standalone page with no links to anything else
+- [x] Monday reminder digest + `/api/cron/weekly-digest` — needs an
+      external trigger (a Railway Cron Job) wired up outside this repo,
+      not configurable from code
+- [ ] Posting-log → Analytics/Experiments scoring tie-in (those tabs
+      don't exist as real features yet either)
+- [ ] Portfolio awareness — flag a project that's gone quiet
+- [ ] Launch Mode's 30-day plan auto-populating the queue as dated,
+      draggable items (needs bridging `LaunchChannel` ↔ `QueueChannel`)
+- [ ] Direct publishing (skip the composer hand-off) for lower-risk
+      channels, subject to per-platform API access and cost
+- [ ] Small-business channel presets (Google Business Profile, Facebook,
+      "local shop" type) — a separate ICP-expansion decision; everything
+      else in this app is built around indie/no-code founders
 
 ### Phase 4 — Build-in-Public automation
 
